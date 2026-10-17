@@ -1,0 +1,18 @@
+<?php
+
+namespace App\Http\Requests\Api;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class UpdateMenuItemAvailabilityRequest extends FormRequest
+{
+    /**
+     * @return array<string, mixed>
+     */
+    public function rules(): array
+    {
+        return [
+            'is_available' => ['required', 'boolean'],
+        ];
+    }
+}
