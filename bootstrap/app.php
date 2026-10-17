@@ -39,6 +39,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'restaurant.member' => EnsureRestaurantMembership::class,
         ]);
+
+        // Inertia pages outside `auth` groups redirect guests to the Fortify login.
+        $middleware->redirectGuestsTo(fn () => route('login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

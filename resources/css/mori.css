@@ -1,0 +1,72 @@
+/*
+  MORI storefront tokens.
+
+  These sit alongside the starter kit's shadcn tokens. They are scoped to the
+  customer-facing layout so the back office keeps its neutral admin palette.
+*/
+
+@theme inline {
+    --font-display: 'Playfair Display', ui-serif, Georgia, serif;
+    --font-body: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+
+    --color-mori-ink: #22201d;
+    --color-mori-muted: #716c65;
+    --color-mori-wine: #8d302e;
+    --color-mori-wine-hover: #702522;
+    --color-mori-cream: #f6f1e8;
+    --color-mori-paper: #fffdf9;
+    --color-mori-line: #e7e0d6;
+    --color-mori-sage: #526b54;
+    --color-mori-sand: #d8c6a9;
+    --color-admin-bg: #f5f6f3;
+    --color-admin-sidebar: #1c211c;
+}
+
+/* Customer shell */
+.mori-shell {
+    --mori-ink: #22201d;
+    --mori-muted: #716c65;
+    --mori-wine: #8d302e;
+    --mori-wine-hover: #702522;
+    --mori-cream: #f6f1e8;
+    --mori-paper: #fffdf9;
+    --mori-line: #e7e0d6;
+    --mori-sage: #526b54;
+    --mori-sand: #d8c6a9;
+
+    min-height: 100vh;
+    background: var(--mori-paper);
+    color: var(--mori-ink);
+    font-family: var(--font-body);
+}
+
+.mori-container {
+    width: 100%;
+    max-width: 1180px;
+    margin-inline: auto;
+    padding-inline: 20px;
+}
+
+.mori-heading {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+/* Admin shell */
+.admin-shell {
+    --admin-bg: #f5f6f3;
+    --admin-sidebar: #1c211c;
+    --admin-line: #e3e5df;
+
+    min-height: 100vh;
+    background: var(--admin-bg);
+    color: var(--mori-ink, #22201d);
+    font-family: var(--font-body);
+}
+
+.admin-sidebar {
+    width: 230px;
+    background: var(--admin-sidebar);
+    color: #f2efe8;
+}

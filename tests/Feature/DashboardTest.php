@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Restaurant;
+use App\Models\RestaurantMember;
 use App\Models\User;
 
 test('guests are redirected to the login page', function () {
@@ -7,10 +9,17 @@ test('guests are redirected to the login page', function () {
     $response->assertRedirect(route('login'));
 });
 
-test('authenticated users can visit the dashboard', function () {
+test('authenticated users are sent from the dashboard to the back office', function () {
+    $restaurant = Restaurant::factory()->create();
     $user = User::factory()->create();
+
+    RestaurantMember::factory()->admin()->create([
+        'restaurant_id' => $restaurant->id,
+        'user_id' => $user->id,
+    ]);
+
     $this->actingAs($user);
 
-    $response = $this->get(route('dashboard'));
-    $response->assertOk();
+    $this->get(route('dashboard'))
+        ->assertRedirect(route('admin.dashboard'));
 });

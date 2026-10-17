@@ -1,7 +1,9 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import { initializeTheme } from '@/composables/useAppearance';
+import AdminLayout from '@/layouts/AdminLayout.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
+import StorefrontLayout from '@/layouts/StorefrontLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 
@@ -17,6 +19,13 @@ void createInertiaApp({
                 return AuthLayout;
             case name.startsWith('settings/'):
                 return [AppLayout, SettingsLayout];
+            case name.startsWith('Storefront/'):
+            case name.startsWith('Customer/'):
+            case name === 'Dashboard':
+            case name === 'NotFound':
+                return StorefrontLayout;
+            case name.startsWith('Admin/'):
+                return AdminLayout;
             default:
                 return AppLayout;
         }

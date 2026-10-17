@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\RestaurantContext;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -41,7 +42,29 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'restaurantContext' => fn (): ?array => $this->restaurantContext($request),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+        ];
+    }
+
+    /**
+     * The restaurant a signed-in member administers, used by the back-office
+     * layout for its navigation. Null for guests and plain customers.
+     *
+     * @return array{id: int, name: string, slug: string}|null
+     */
+    private function restaurantContext(Request $request): ?array
+    {
+        $restaurant = RestaurantContext::forUser($request->user());
+
+        if ($restaurant === null) {
+            return null;
+        }
+
+        return [
+            'id' => $restaurant->id,
+            'name' => $restaurant->name,
+            'slug' => $restaurant->slug,
         ];
     }
 }
