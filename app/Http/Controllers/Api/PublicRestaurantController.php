@@ -21,6 +21,9 @@ use Illuminate\Support\Carbon;
  */
 class PublicRestaurantController extends Controller
 {
+    /**
+     * List active restaurants with optional search and pagination for the public storefront.
+     */
     public function index(Request $request): AnonymousResourceCollection
     {
         $restaurants = Restaurant::query()
@@ -38,11 +41,17 @@ class PublicRestaurantController extends Controller
         return RestaurantResource::collection($restaurants);
     }
 
+    /**
+     * Return one active restaurant for a public catalogue or landing-page view.
+     */
     public function show(string $slug): RestaurantResource
     {
         return new RestaurantResource($this->activeRestaurant($slug));
     }
 
+    /**
+     * Return the category list for a restaurant and include the number of currently available items.
+     */
     public function categories(string $slug): AnonymousResourceCollection
     {
         $restaurant = $this->activeRestaurant($slug);
@@ -56,6 +65,9 @@ class PublicRestaurantController extends Controller
         return CategoryResource::collection($categories);
     }
 
+    /**
+     * Return filtered and paginated menu items for a restaurant's public menu.
+     */
     public function menuItems(Request $request, string $slug): AnonymousResourceCollection
     {
         $restaurant = $this->activeRestaurant($slug);
@@ -81,6 +93,9 @@ class PublicRestaurantController extends Controller
         return MenuItemResource::collection($items);
     }
 
+    /**
+     * Return a single active menu item only if it belongs to the requested restaurant and remains available.
+     */
     public function menuItem(string $slug, MenuItem $menuItem): MenuItemResource
     {
         $restaurant = $this->activeRestaurant($slug);
@@ -122,6 +137,9 @@ class PublicRestaurantController extends Controller
         ]);
     }
 
+    /**
+     * Resolve an active restaurant by slug while preventing access to disabled locations.
+     */
     private function activeRestaurant(string $slug): Restaurant
     {
         return Restaurant::query()
@@ -130,6 +148,9 @@ class PublicRestaurantController extends Controller
             ->firstOrFail();
     }
 
+    /**
+     * Clamp the public pagination size into the supported safe range.
+     */
     private function perPage(Request $request): int
     {
         return min(max($request->integer('per_page', 15), 1), 100);

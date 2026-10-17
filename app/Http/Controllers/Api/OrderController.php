@@ -19,6 +19,9 @@ use Illuminate\Support\Facades\Gate;
  */
 class OrderController extends Controller
 {
+    /**
+     * Return the authenticated customer's recent orders with optional status filtering.
+     */
     public function index(Request $request): AnonymousResourceCollection
     {
         $orders = $request->user()->orders()
@@ -32,6 +35,9 @@ class OrderController extends Controller
         return OrderResource::collection($orders);
     }
 
+    /**
+     * Create a new checkout order from the customer's cart and restaurant selection.
+     */
     public function store(StoreOrderRequest $request, OrderService $orders): JsonResponse
     {
         $restaurant = Restaurant::query()->findOrFail($request->integer('restaurant_id'));
@@ -55,6 +61,9 @@ class OrderController extends Controller
         return (new OrderResource($order))->response()->setStatusCode(201);
     }
 
+    /**
+     * Display one order after verifying the user is allowed to see it.
+     */
     public function show(Request $request, Order $order): OrderResource
     {
         Gate::authorize('view', $order);
@@ -62,6 +71,9 @@ class OrderController extends Controller
         return new OrderResource($order->load(self::DETAIL_RELATIONS));
     }
 
+    /**
+     * Cancel a customer's own placed order and record the status change history.
+     */
     public function cancel(Request $request, Order $order, OrderService $orders): OrderResource
     {
         Gate::authorize('cancel', $order);

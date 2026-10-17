@@ -23,6 +23,9 @@ class AuthController extends Controller
     /**
      * Register a customer account and sign it in on the current session.
      */
+    /**
+     * Create a new customer account and start an authenticated session for it.
+     */
     public function register(RegisterRequest $request): JsonResponse
     {
         // Public registration always creates a CUSTOMER; role escalation is not
@@ -39,6 +42,9 @@ class AuthController extends Controller
             ->setStatusCode(201);
     }
 
+    /**
+     * Authenticate an existing user and establish the browser session used by the SPA.
+     */
     public function login(LoginRequest $request): JsonResponse
     {
         $throttleKey = Str::transliterate(Str::lower($request->string('email')).'|'.$request->ip());
@@ -68,6 +74,9 @@ class AuthController extends Controller
         return (new UserResource($user->load('memberships.restaurant')))->response();
     }
 
+    /**
+     * End the active web session and invalidate the current browser authentication state.
+     */
     public function logout(Request $request): Response
     {
         $this->guard()->logout();
@@ -80,6 +89,9 @@ class AuthController extends Controller
         return response()->noContent();
     }
 
+    /**
+     * Return the authenticated user with their restaurant memberships for the client UI.
+     */
     public function me(Request $request): UserResource
     {
         return new UserResource(
@@ -87,6 +99,9 @@ class AuthController extends Controller
         );
     }
 
+    /**
+     * Update the signed-in user's profile and clear email verification if the address changes.
+     */
     public function updateProfile(UpdateProfileRequest $request): UserResource
     {
         $user = $request->user();
@@ -102,6 +117,9 @@ class AuthController extends Controller
         return new UserResource($user->load('memberships.restaurant'));
     }
 
+    /**
+     * Log a user into the configured web guard and refresh the session cookie for the app.
+     */
     private function loginForSession(Request $request, User $user, bool $remember = false): void
     {
         $this->guard()->login($user, $remember);
@@ -111,6 +129,9 @@ class AuthController extends Controller
         }
     }
 
+    /**
+     * Resolve the session-based web guard used by the API's SPA authentication flow.
+     */
     private function guard(): StatefulGuard
     {
         /** @var StatefulGuard $guard */

@@ -147,6 +147,9 @@ class ReservationService
         });
     }
 
+    /**
+     * Move a reservation through its allowed lifecycle and record the historical status change.
+     */
     public function transition(Reservation $reservation, ReservationStatus $to, ?User $actor): Reservation
     {
         return DB::transaction(function () use ($reservation, $to, $actor): Reservation {
@@ -184,6 +187,9 @@ class ReservationService
         });
     }
 
+    /**
+     * Validate the restaurant, time window, party size, and availability constraints before booking.
+     */
     private function assertOrderingRules(Restaurant $restaurant, CarbonInterface $start, int $partySize): void
     {
         if (! $restaurant->is_active) {
@@ -216,7 +222,7 @@ class ReservationService
     }
 
     /**
-     * Release PENDING holds whose window has elapsed so they stop blocking slots.
+     * Release stale pending holds so they stop blocking a table after their grace period expires.
      */
     private function expireHolds(Restaurant $restaurant): void
     {

@@ -133,7 +133,7 @@ class OrderService
     }
 
     /**
-     * Apply a status transition on behalf of an authorized actor.
+     * Apply an order status transition when the actor has permission to advance or override the order.
      */
     public function transition(Order $order, OrderStatus $to, ?User $actor, ?string $reason = null, bool $asAdministrator = false): Order
     {
@@ -176,7 +176,7 @@ class OrderService
     }
 
     /**
-     * Reload order state and synchronise order.payment_status from its payment rows.
+     * Recalculate the order's payment status from the stored payment records and persist the result.
      */
     public function syncPaymentStatus(Order $order): Order
     {
@@ -266,6 +266,8 @@ class OrderService
     }
 
     /**
+     * Insert a new order with a unique, collision-safe order number.
+     *
      * @param  array<string, mixed>  $attributes
      */
     private function insertWithUniqueNumber(array $attributes): Order
@@ -286,6 +288,9 @@ class OrderService
         throw ApiException::conflict('Could not allocate a unique order number. Please retry.');
     }
 
+    /**
+     * Look up a prior order created for the same customer and idempotency key.
+     */
     private function findIdempotentOrder(User $customer, string $key): ?Order
     {
         $storedId = Cache::get($this->idempotencyStoreKey($customer, $key));
@@ -299,6 +304,9 @@ class OrderService
             ->find((int) $storedId);
     }
 
+    /**
+     * Build the cache key used to remember idempotent order submissions for a customer.
+     */
     private function idempotencyStoreKey(User $customer, string $key): string
     {
         return 'order:'.$customer->id.':'.hash('sha256', $key);

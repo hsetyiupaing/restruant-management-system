@@ -17,6 +17,9 @@ use Illuminate\Support\Facades\Gate;
 
 class ReservationController extends Controller
 {
+    /**
+     * Return the logged-in user's reservation history with optional status and upcoming filters.
+     */
     public function index(Request $request): AnonymousResourceCollection
     {
         $reservations = $request->user()->reservations()
@@ -30,6 +33,9 @@ class ReservationController extends Controller
         return ReservationResource::collection($reservations);
     }
 
+    /**
+     * Create a new reservation for a selected table and time slot after validating restaurant rules.
+     */
     public function store(StoreReservationRequest $request, ReservationService $reservations): JsonResponse
     {
         $restaurant = Restaurant::query()->findOrFail($request->integer('restaurant_id'));
@@ -46,6 +52,9 @@ class ReservationController extends Controller
         return (new ReservationResource($reservation))->response()->setStatusCode(201);
     }
 
+    /**
+     * Load a single reservation after ensuring the current user has access to it.
+     */
     public function show(Request $request, Reservation $reservation): ReservationResource
     {
         Gate::authorize('view', $reservation);
@@ -53,6 +62,9 @@ class ReservationController extends Controller
         return new ReservationResource($reservation->load(['restaurant', 'table', 'customer', 'statusHistory.changedBy']));
     }
 
+    /**
+     * Cancel a reservation while enforcing the booking lifecycle and cancellation rules.
+     */
     public function cancel(Request $request, Reservation $reservation, ReservationService $reservations): ReservationResource
     {
         Gate::authorize('cancel', $reservation);

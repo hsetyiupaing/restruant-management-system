@@ -17,6 +17,9 @@ use Illuminate\Support\Str;
  */
 class RestaurantController extends Controller
 {
+    /**
+     * List restaurants for platform administrators with optional text and active-state filtering.
+     */
     public function index(Request $request): AnonymousResourceCollection
     {
         Gate::authorize('create', Restaurant::class);
@@ -33,6 +36,9 @@ class RestaurantController extends Controller
         return RestaurantResource::collection($restaurants);
     }
 
+    /**
+     * Create a new restaurant tenant and assign a URL-safe slug from the name.
+     */
     public function store(StoreRestaurantRequest $request): RestaurantResource
     {
         Gate::authorize('create', Restaurant::class);
@@ -45,6 +51,9 @@ class RestaurantController extends Controller
         return new RestaurantResource($restaurant);
     }
 
+    /**
+     * Update the core restaurant profile and settings for an authorized administrator.
+     */
     public function update(UpdateRestaurantRequest $request, Restaurant $restaurant): RestaurantResource
     {
         Gate::authorize('update', $restaurant);
@@ -54,6 +63,9 @@ class RestaurantController extends Controller
         return new RestaurantResource($restaurant);
     }
 
+    /**
+     * Return the current restaurant settings payload used by the admin settings view.
+     */
     public function settings(Restaurant $restaurant): RestaurantResource
     {
         Gate::authorize('view', $restaurant);
@@ -61,6 +73,9 @@ class RestaurantController extends Controller
         return new RestaurantResource($restaurant);
     }
 
+    /**
+     * Activate a restaurant so it becomes available to customers in the public catalogue.
+     */
     public function activate(Restaurant $restaurant): RestaurantResource
     {
         Gate::authorize('manageActivation', $restaurant);
@@ -70,6 +85,9 @@ class RestaurantController extends Controller
         return new RestaurantResource($restaurant);
     }
 
+    /**
+     * Temporarily deactivate a restaurant and hide it from public browsing.
+     */
     public function deactivate(Restaurant $restaurant): RestaurantResource
     {
         Gate::authorize('manageActivation', $restaurant);
