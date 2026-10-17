@@ -17,30 +17,30 @@
 
 ## 1. User Roles & Permissions
 
-| Role | Who | Scope |
-|---|---|---|
-| **Guest** | Not logged in | Public |
-| **Customer** | Registered diner | Own data only |
-| **Staff** | Cashier, kitchen, waiter, driver | One restaurant, operational |
-| **Admin** | Owner or manager | One restaurant, full control |
-| **Super Admin** | Platform operator | All restaurants (optional) |
+| Role            | Who                              | Scope                        |
+| --------------- | -------------------------------- | ---------------------------- |
+| **Guest**       | Not logged in                    | Public                       |
+| **Customer**    | Registered diner                 | Own data only                |
+| **Staff**       | Cashier, kitchen, waiter, driver | One restaurant, operational  |
+| **Admin**       | Owner or manager                 | One restaurant, full control |
+| **Super Admin** | Platform operator                | All restaurants (optional)   |
 
 ### Permission matrix
 
-| Capability | Guest | Customer | Staff | Admin |
-|---|:-:|:-:|:-:|:-:|
-| View home, menu, table availability | ✅ | ✅ | ✅ | ✅ |
-| Place order (pickup/delivery) | ❌ | ✅ | ✅ (on behalf, walk-in) | ✅ |
-| Make or cancel own reservation | ❌ | ✅ | ✅ (any) | ✅ (any) |
-| View own orders/reservations | ❌ | ✅ | ❌ | ❌ |
-| View all orders/reservations | ❌ | ❌ | ✅ | ✅ |
-| Update order status | ❌ | ❌ | ✅ (forward only) | ✅ (any, incl. cancel/refund) |
-| Check in / seat / no-show reservations | ❌ | ❌ | ✅ | ✅ |
-| Assign delivery driver | ❌ | ❌ | ✅ | ✅ |
-| Edit menu, prices, availability | ❌ | ❌ | ✅ (toggle sold-out only) | ✅ (full) |
-| Edit table layout | ❌ | ❌ | ❌ | ✅ |
-| View KPIs and revenue | ❌ | ❌ | ❌ | ✅ |
-| Manage staff accounts and settings | ❌ | ❌ | ❌ | ✅ |
+| Capability                             | Guest | Customer |           Staff           |             Admin             |
+| -------------------------------------- | :---: | :------: | :-----------------------: | :---------------------------: |
+| View home, menu, table availability    |  ✅   |    ✅    |            ✅             |              ✅               |
+| Place order (pickup/delivery)          |  ❌   |    ✅    |  ✅ (on behalf, walk-in)  |              ✅               |
+| Make or cancel own reservation         |  ❌   |    ✅    |         ✅ (any)          |           ✅ (any)            |
+| View own orders/reservations           |  ❌   |    ✅    |            ❌             |              ❌               |
+| View all orders/reservations           |  ❌   |    ❌    |            ✅             |              ✅               |
+| Update order status                    |  ❌   |    ❌    |     ✅ (forward only)     | ✅ (any, incl. cancel/refund) |
+| Check in / seat / no-show reservations |  ❌   |    ❌    |            ✅             |              ✅               |
+| Assign delivery driver                 |  ❌   |    ❌    |            ✅             |              ✅               |
+| Edit menu, prices, availability        |  ❌   |    ❌    | ✅ (toggle sold-out only) |           ✅ (full)           |
+| Edit table layout                      |  ❌   |    ❌    |            ❌             |              ✅               |
+| View KPIs and revenue                  |  ❌   |    ❌    |            ❌             |              ✅               |
+| Manage staff accounts and settings     |  ❌   |    ❌    |            ❌             |              ✅               |
 
 **Staff sub-roles** (stored in `restaurant_members.staff_type`): `CASHIER`, `KITCHEN`, `WAITER`, `DRIVER`. Kitchen sees only orders in `CONFIRMED → READY`. Drivers see only their deliveries.
 
@@ -50,18 +50,18 @@
 
 ### 2.1 Order status
 
-| Status | Meaning | Set by | Next |
-|---|---|---|---|
-| `PLACED` | Customer submitted, awaiting restaurant | Customer | CONFIRMED, REJECTED, CANCELLED |
-| `CONFIRMED` | Restaurant accepted, payment OK or COD | Staff/Admin | PREPARING, CANCELLED |
-| `PREPARING` | Kitchen is cooking | Kitchen | READY |
-| `READY` | Food done; waiting for pickup or driver | Kitchen | COMPLETED (pickup), OUT_FOR_DELIVERY (delivery) |
-| `OUT_FOR_DELIVERY` | Driver has the order | Driver/Staff | COMPLETED, DELIVERY_FAILED |
-| `COMPLETED` | Handed over / delivered | Staff/Driver | REFUNDED (Admin) |
-| `CANCELLED` | Cancelled by customer or restaurant | Customer (only while PLACED) / Admin | terminal |
-| `REJECTED` | Restaurant declined (closed, out of stock) | Staff/Admin | terminal |
-| `DELIVERY_FAILED` | Couldn't deliver | Driver/Admin | OUT_FOR_DELIVERY (retry), CANCELLED |
-| `REFUNDED` | Money returned after completion | Admin | terminal |
+| Status             | Meaning                                    | Set by                               | Next                                            |
+| ------------------ | ------------------------------------------ | ------------------------------------ | ----------------------------------------------- |
+| `PLACED`           | Customer submitted, awaiting restaurant    | Customer                             | CONFIRMED, REJECTED, CANCELLED                  |
+| `CONFIRMED`        | Restaurant accepted, payment OK or COD     | Staff/Admin                          | PREPARING, CANCELLED                            |
+| `PREPARING`        | Kitchen is cooking                         | Kitchen                              | READY                                           |
+| `READY`            | Food done; waiting for pickup or driver    | Kitchen                              | COMPLETED (pickup), OUT_FOR_DELIVERY (delivery) |
+| `OUT_FOR_DELIVERY` | Driver has the order                       | Driver/Staff                         | COMPLETED, DELIVERY_FAILED                      |
+| `COMPLETED`        | Handed over / delivered                    | Staff/Driver                         | REFUNDED (Admin)                                |
+| `CANCELLED`        | Cancelled by customer or restaurant        | Customer (only while PLACED) / Admin | terminal                                        |
+| `REJECTED`         | Restaurant declined (closed, out of stock) | Staff/Admin                          | terminal                                        |
+| `DELIVERY_FAILED`  | Couldn't deliver                           | Driver/Admin                         | OUT_FOR_DELIVERY (retry), CANCELLED             |
+| `REFUNDED`         | Money returned after completion            | Admin                                | terminal                                        |
 
 ```mermaid
 stateDiagram-v2
@@ -87,24 +87,24 @@ stateDiagram-v2
 
 ### 2.2 Payment status (separate from order status)
 
-| Status | Meaning |
-|---|---|
-| `UNPAID` | Not yet paid (COD or awaiting online payment) |
-| `PAID` | Payment captured |
-| `FAILED` | Online payment failed |
-| `REFUNDED` | Fully or partially refunded |
+| Status     | Meaning                                       |
+| ---------- | --------------------------------------------- |
+| `UNPAID`   | Not yet paid (COD or awaiting online payment) |
+| `PAID`     | Payment captured                              |
+| `FAILED`   | Online payment failed                         |
+| `REFUNDED` | Fully or partially refunded                   |
 
 ### 2.3 Reservation status
 
-| Status | Meaning | Set by |
-|---|---|---|
-| `PENDING` | Requested, awaiting approval (only if the restaurant uses manual approval; the slot is held) | Customer |
-| `CONFIRMED` | Table locked for the time slot | System/Staff |
-| `SEATED` | Customer arrived and was seated | Staff |
-| `COMPLETED` | Dining finished, table released | Staff |
-| `CANCELLED` | Cancelled by customer or restaurant | Customer/Staff |
-| `NO_SHOW` | Didn't arrive within the grace period | Staff/System |
-| `EXPIRED` | Pending request not approved within the hold time | System |
+| Status      | Meaning                                                                                      | Set by         |
+| ----------- | -------------------------------------------------------------------------------------------- | -------------- |
+| `PENDING`   | Requested, awaiting approval (only if the restaurant uses manual approval; the slot is held) | Customer       |
+| `CONFIRMED` | Table locked for the time slot                                                               | System/Staff   |
+| `SEATED`    | Customer arrived and was seated                                                              | Staff          |
+| `COMPLETED` | Dining finished, table released                                                              | Staff          |
+| `CANCELLED` | Cancelled by customer or restaurant                                                          | Customer/Staff |
+| `NO_SHOW`   | Didn't arrive within the grace period                                                        | Staff/System   |
+| `EXPIRED`   | Pending request not approved within the hold time                                            | System         |
 
 ```mermaid
 stateDiagram-v2
@@ -125,11 +125,11 @@ stateDiagram-v2
 
 ### 2.4 Table status (live, derived for the visual map)
 
-| Status | Meaning |
-|---|---|
-| `AVAILABLE` | Free for the selected slot |
-| `RESERVED` | Has a CONFIRMED/PENDING reservation in the slot |
-| `OCCUPIED` | Currently SEATED |
+| Status        | Meaning                                              |
+| ------------- | ---------------------------------------------------- |
+| `AVAILABLE`   | Free for the selected slot                           |
+| `RESERVED`    | Has a CONFIRMED/PENDING reservation in the slot      |
+| `OCCUPIED`    | Currently SEATED                                     |
 | `UNAVAILABLE` | Disabled by admin (maintenance, `is_active = false`) |
 
 ### 2.5 Delivery status
@@ -167,30 +167,30 @@ stateDiagram-v2
 
 ### 4.1 Customer website
 
-| # | Feature | Notes |
-|---|---|---|
-| C1 | Home page | Info, hours, address, featured dishes (`menu_items.is_featured`) |
-| C2 | Register / login | Email or phone |
-| C3 | Menu browsing | Categories, search, sold-out badges |
-| C4 | Cart & checkout | Notes, item options |
-| C5 | Pickup or delivery selection | Pickup time slot or delivery address + fee |
-| C6 | Table reservation with visual table map | Pick date/time/party size → map shows table status → select table |
-| C7 | My Orders | Status timeline, reorder, cancel (while PLACED) |
-| C8 | My Reservations | Status, cancel, modify |
-| C9 | Profile & saved addresses | |
+| #   | Feature                                 | Notes                                                             |
+| --- | --------------------------------------- | ----------------------------------------------------------------- |
+| C1  | Home page                               | Info, hours, address, featured dishes (`menu_items.is_featured`)  |
+| C2  | Register / login                        | Email or phone                                                    |
+| C3  | Menu browsing                           | Categories, search, sold-out badges                               |
+| C4  | Cart & checkout                         | Notes, item options                                               |
+| C5  | Pickup or delivery selection            | Pickup time slot or delivery address + fee                        |
+| C6  | Table reservation with visual table map | Pick date/time/party size → map shows table status → select table |
+| C7  | My Orders                               | Status timeline, reorder, cancel (while PLACED)                   |
+| C8  | My Reservations                         | Status, cancel, modify                                            |
+| C9  | Profile & saved addresses               |                                                                   |
 
 ### 4.2 Admin dashboard
 
-| # | Feature | Notes |
-|---|---|---|
-| A1 | KPI dashboard | Revenue, order count, average order value, reservation count, no-show rate, top dishes, date-range filter |
-| A2 | Order management | Live queue, filter by status/type, update status, cancel/refund |
-| A3 | Menu & price management | CRUD categories/items, price, image, availability toggle |
-| A4 | Table layout editor | Drag tables on a floor plan, set capacity, enable/disable |
-| A5 | Reservation management | Calendar/list, approve, seat, mark no-show |
-| A6 | Pickup & delivery management | Pickup board, delivery list, driver assignment, delivery fee/zone settings |
-| A7 | Staff management | Invite staff, assign sub-role |
-| A8 | Restaurant settings | Hours, slot length, auto-confirm toggle, tax, fees |
+| #   | Feature                      | Notes                                                                                                     |
+| --- | ---------------------------- | --------------------------------------------------------------------------------------------------------- |
+| A1  | KPI dashboard                | Revenue, order count, average order value, reservation count, no-show rate, top dishes, date-range filter |
+| A2  | Order management             | Live queue, filter by status/type, update status, cancel/refund                                           |
+| A3  | Menu & price management      | CRUD categories/items, price, image, availability toggle                                                  |
+| A4  | Table layout editor          | Drag tables on a floor plan, set capacity, enable/disable                                                 |
+| A5  | Reservation management       | Calendar/list, approve, seat, mark no-show                                                                |
+| A6  | Pickup & delivery management | Pickup board, delivery list, driver assignment, delivery fee/zone settings                                |
+| A7  | Staff management             | Invite staff, assign sub-role                                                                             |
+| A8  | Restaurant settings          | Hours, slot length, auto-confirm toggle, tax, fees                                                        |
 
 **KPI definitions**
 
@@ -395,15 +395,15 @@ erDiagram
 
 Participant icons used in every diagram:
 
-| Icon type | Used for |
-|---|---|
-| `actor` | People: Customer, Staff, Kitchen, Driver, Admin |
-| `boundary` | Screens: Customer Website, Admin Dashboard |
-| `control` | Business logic: Order Service, Reservation Service |
-| `entity` | Domain objects: Order, Reservation |
-| `database` | Persistent storage |
-| `collections` | Lists of records: Menu Items, Tables |
-| `queue` | Async notifications |
+| Icon type     | Used for                                           |
+| ------------- | -------------------------------------------------- |
+| `actor`       | People: Customer, Staff, Kitchen, Driver, Admin    |
+| `boundary`    | Screens: Customer Website, Admin Dashboard         |
+| `control`     | Business logic: Order Service, Reservation Service |
+| `entity`      | Domain objects: Order, Reservation                 |
+| `database`    | Persistent storage                                 |
+| `collections` | Lists of records: Menu Items, Tables               |
+| `queue`       | Async notifications                                |
 
 > Requires Mermaid 11.7 or newer for the participant icon syntax (`@{ "type": "..." }`).
 
