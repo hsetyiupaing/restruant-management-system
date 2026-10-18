@@ -1,4 +1,5 @@
 import type { Auth } from '@/types/auth';
+import type { FoodRestrictionEntry } from '@/types/restaurant';
 
 export type RestaurantContext = {
     id: number;
@@ -26,7 +27,7 @@ declare module '@inertiajs/core' {
     export interface InertiaConfig {
         sharedPageProps: {
             name: string;
-            auth: Auth;
+            auth: Auth & { foodRestrictions?: FoodRestrictionEntry[] };
             sidebarOpen: boolean;
             restaurantContext: RestaurantContext | null;
             flash?: { toast?: FlashToast };

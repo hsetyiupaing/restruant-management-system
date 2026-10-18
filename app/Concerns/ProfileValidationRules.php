@@ -18,6 +18,7 @@ trait ProfileValidationRules
         return [
             'name' => $this->nameRules(),
             'email' => $this->emailRules($userId),
+            'phone' => $this->phoneRules(),
         ];
     }
 
@@ -47,5 +48,16 @@ trait ProfileValidationRules
                 ? Rule::unique(User::class)
                 : Rule::unique(User::class)->ignore($userId),
         ];
+    }
+
+    /**
+     * An optional contact number. Deliberately loose: phone formats vary by
+     * country, so only obviously unsafe input is rejected.
+     *
+     * @return array<int, ValidationRule|array<mixed>|string>
+     */
+    protected function phoneRules(): array
+    {
+        return ['nullable', 'string', 'max:32', 'regex:/^[0-9+()\s.-]{6,32}$/'];
     }
 }

@@ -9,7 +9,10 @@ import type { MenuItem, Restaurant } from '@/types/restaurant';
 const props = defineProps<{
     restaurant: Restaurant | null;
     featuredDishes: MenuItem[];
-    openingHours: Record<string, { open?: string; close?: string } | null> | null;
+    openingHours: Record<
+        string,
+        { open?: string; close?: string } | null
+    > | null;
     totalDishes: number;
 }>();
 
@@ -33,18 +36,24 @@ function todayKey(): string {
     <Head title="MORI · Kitchen & Table" />
 
     <section class="relative overflow-hidden bg-mori-cream">
-        <div class="mori-container grid items-center gap-10 py-16 lg:grid-cols-2 lg:py-24">
+        <div
+            class="mori-container grid items-center gap-10 py-16 lg:grid-cols-2 lg:py-24"
+        >
             <div>
                 <p class="text-xs tracking-[0.28em] text-mori-wine uppercase">
                     Now serving
                 </p>
-                <h1 class="mori-heading mt-4 text-4xl leading-[1.05] sm:text-5xl lg:text-6xl">
+                <h1
+                    class="mori-heading mt-4 text-4xl leading-[1.05] sm:text-5xl lg:text-6xl"
+                >
                     Fire, season and a table set for you.
                 </h1>
-                <p class="mt-5 max-w-md text-base leading-relaxed text-mori-muted">
-                    {{ restaurant?.name ?? 'MORI' }} cooks with the market's best
-                    each morning. Order for pickup or delivery, or book a seat by
-                    the window.
+                <p
+                    class="mt-5 max-w-md text-base leading-relaxed text-mori-muted"
+                >
+                    {{ restaurant?.name ?? 'MORI' }} cooks with the market's
+                    best each morning. Order for pickup or delivery, or book a
+                    seat by the window.
                 </p>
                 <div class="mt-8 flex flex-wrap gap-3">
                     <AppButton href="/menu" size="lg">
@@ -58,7 +67,9 @@ function todayKey(): string {
             </div>
 
             <div class="relative">
-                <div class="aspect-[4/5] overflow-hidden rounded bg-mori-sand/40">
+                <div
+                    class="aspect-[4/5] overflow-hidden rounded bg-mori-sand/40"
+                >
                     <img
                         v-if="featuredDishes[0]?.image_url"
                         :src="featuredDishes[0].image_url"
@@ -69,7 +80,9 @@ function todayKey(): string {
                         v-else
                         class="flex h-full items-center justify-center bg-gradient-to-br from-mori-sand/60 to-mori-cream"
                     >
-                        <span class="font-display text-6xl text-mori-wine/40">M</span>
+                        <span class="font-display text-6xl text-mori-wine/40"
+                            >M</span
+                        >
                     </div>
                 </div>
             </div>
@@ -112,25 +125,38 @@ function todayKey(): string {
                     eyebrow="Our story"
                     title="A room built around the fire"
                 />
-                <p class="mt-4 max-w-prose text-sm leading-relaxed text-mori-muted">
+                <p
+                    class="mt-4 max-w-prose text-sm leading-relaxed text-mori-muted"
+                >
                     We keep the menu short, the sourcing local and the cooking
-                    unhurried. Come for a quick lunch at the counter or settle in
-                    for a long dinner — the kitchen works the same either way.
+                    unhurried. Come for a quick lunch at the counter or settle
+                    in for a long dinner — the kitchen works the same either
+                    way.
                 </p>
             </div>
 
             <div class="grid gap-6 sm:grid-cols-2">
                 <div>
-                    <h3 class="text-xs font-semibold tracking-[0.2em] text-mori-ink uppercase">
+                    <h3
+                        class="text-xs font-semibold tracking-[0.2em] text-mori-ink uppercase"
+                    >
                         Find us
                     </h3>
-                    <address class="mt-3 space-y-1 text-sm text-mori-muted not-italic">
-                        <p>{{ restaurant?.address ?? 'Address to be confirmed' }}</p>
+                    <address
+                        class="mt-3 space-y-1 text-sm text-mori-muted not-italic"
+                    >
+                        <p>
+                            {{
+                                restaurant?.address ?? 'Address to be confirmed'
+                            }}
+                        </p>
                         <p v-if="restaurant?.phone">{{ restaurant.phone }}</p>
                     </address>
                 </div>
                 <div>
-                    <h3 class="text-xs font-semibold tracking-[0.2em] text-mori-ink uppercase">
+                    <h3
+                        class="text-xs font-semibold tracking-[0.2em] text-mori-ink uppercase"
+                    >
                         Opening hours
                     </h3>
                     <dl class="mt-3 space-y-1 text-sm text-mori-muted">
@@ -138,14 +164,21 @@ function todayKey(): string {
                             v-for="day in days"
                             :key="day"
                             class="flex justify-between gap-3"
-                            :class="{ 'font-medium text-mori-ink': day === todayKey() }"
+                            :class="{
+                                'font-medium text-mori-ink': day === todayKey(),
+                            }"
                         >
                             <dt>{{ labels[day] }}</dt>
                             <dd>
                                 <template
-                                    v-if="openingHours?.[day]?.open && openingHours?.[day]?.close"
+                                    v-if="
+                                        openingHours?.[day]?.open &&
+                                        openingHours?.[day]?.close
+                                    "
                                 >
-                                    {{ openingHours[day]?.open }}–{{ openingHours[day]?.close }}
+                                    {{ openingHours[day]?.open }}–{{
+                                        openingHours[day]?.close
+                                    }}
                                 </template>
                                 <template v-else>Closed</template>
                             </dd>
@@ -163,8 +196,8 @@ function todayKey(): string {
             <div>
                 <h2 class="mori-heading text-2xl">Planning ahead?</h2>
                 <p class="mt-2 text-sm text-mori-muted">
-                    Tables are released up to 30 days out. Pick a time and choose
-                    your spot on the floor plan.
+                    Tables are released up to 30 days out. Pick a time and
+                    choose your spot on the floor plan.
                 </p>
             </div>
             <AppButton href="/reserve" size="lg">
@@ -178,7 +211,9 @@ function todayKey(): string {
         <div class="mori-container pb-10">
             <p class="text-sm text-mori-muted">
                 No restaurant is configured yet.
-                <Link href="/admin" class="underline">Open the back office</Link>
+                <Link href="/admin" class="underline"
+                    >Open the back office</Link
+                >
                 to activate one.
             </p>
         </div>

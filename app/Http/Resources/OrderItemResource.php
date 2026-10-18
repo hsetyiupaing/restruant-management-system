@@ -24,6 +24,7 @@ class OrderItemResource extends JsonResource
             'quantity' => $this->quantity,
             'line_total' => (string) $this->line_total,
             'note' => $this->note,
+            'selected_customizations' => $this->selected_customizations ?? [],
         ];
     }
 }

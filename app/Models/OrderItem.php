@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'order_id', 'menu_item_id', 'item_name_snapshot', 'unit_price',
-    'quantity', 'line_total', 'note',
+    'quantity', 'line_total', 'note', 'selected_customizations',
 ])]
 class OrderItem extends Model
 {
@@ -26,6 +26,7 @@ class OrderItem extends Model
             'unit_price' => 'decimal:2',
             'quantity' => 'integer',
             'line_total' => 'decimal:2',
+            'selected_customizations' => 'array',
         ];
     }
 

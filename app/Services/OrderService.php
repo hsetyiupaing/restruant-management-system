@@ -92,6 +92,7 @@ class OrderService
                     'quantity' => $line['quantity'],
                     'line_total' => $line['line_total'],
                     'note' => $line['note'],
+                    'selected_customizations' => $line['selected_customizations'],
                 ]);
             }
 
@@ -200,16 +201,15 @@ class OrderService
     }
 
     /**
-     * Resolve requested lines against the restaurant's own menu. Duplicate
-     * lines for the same item are merged; every price comes from the database.
+     * Resolve requested lines against the restaurant's own menu. Every base
+     * price and option price comes from the database-backed menu definition.
      *
      * @param  array<int|string, mixed>  $requested
-     * @return Collection<int, array{menu_item_id: int, name: string, unit_price: float, quantity: int, line_total: float, note: non-empty-string|null}>
+     * @return Collection<int, array{menu_item_id: int, name: string, unit_price: float, quantity: int, line_total: float, note: non-empty-string|null, selected_customizations: array<int, array<string, mixed>>}>
      */
     private function resolveItems(Restaurant $restaurant, array $requested): Collection
     {
-        $quantities = [];
-        $notes = [];
+        $menuItemIds = [];
 
         foreach ($requested as $line) {
             if (! is_array($line) || ! isset($line['menu_item_id'], $line['quantity'])) {
@@ -219,22 +219,16 @@ class OrderService
                 );
             }
 
-            $menuItemId = (int) $line['menu_item_id'];
-            $quantity = (int) $line['quantity'];
-            $quantities[$menuItemId] = ($quantities[$menuItemId] ?? 0) + $quantity;
-
-            if (isset($line['note']) && is_string($line['note']) && $line['note'] !== '') {
-                $notes[$menuItemId] = $line['note'];
-            }
+            $menuItemIds[] = (int) $line['menu_item_id'];
         }
 
         $menuItems = MenuItem::query()
             ->where('restaurant_id', $restaurant->id)
-            ->whereIn('id', array_keys($quantities))
+            ->whereIn('id', array_unique($menuItemIds))
             ->get()
             ->keyBy('id');
 
-        if ($menuItems->count() !== count($quantities)) {
+        if ($menuItems->count() !== count(array_unique($menuItemIds))) {
             throw ApiException::invalid(
                 'One or more menu items do not belong to this restaurant.',
                 ['items' => ['An item in the cart is not on this restaurant\'s menu.']],
@@ -250,9 +244,18 @@ class OrderService
             );
         }
 
-        return $menuItems->map(function (MenuItem $item) use ($quantities, $notes): array {
-            $quantity = $quantities[$item->id];
-            $unitPrice = (float) $item->price;
+        return collect($requested)->map(function (array $line) use ($menuItems): array {
+            /** @var MenuItem $item */
+            $item = $menuItems->get((int) $line['menu_item_id']);
+            $quantity = (int) $line['quantity'];
+            $selectedCustomizations = $this->resolveCustomizations(
+                $item,
+                $line['customizations'] ?? [],
+            );
+            $optionPrice = collect($selectedCustomizations)
+                ->flatMap(fn (array $group): array => $group['options'])
+                ->sum(fn (array $option): float => (float) $option['price']);
+            $unitPrice = round((float) $item->price + $optionPrice, 2);
 
             return [
                 'menu_item_id' => $item->id,
@@ -260,9 +263,79 @@ class OrderService
                 'unit_price' => $unitPrice,
                 'quantity' => $quantity,
                 'line_total' => round($unitPrice * $quantity, 2),
-                'note' => $notes[$item->id] ?? null,
+                'note' => isset($line['note']) && is_string($line['note']) && $line['note'] !== ''
+                    ? $line['note']
+                    : null,
+                'selected_customizations' => $selectedCustomizations,
             ];
-        })->values();
+        });
+    }
+
+    /**
+     * Resolve client-supplied option IDs against the current dish configuration.
+     *
+     * @param  array<int, array{group_id: string, option_ids: array<int, string>}>  $requested
+     * @return array<int, array{group_id: string, group_name: string, type: string, options: array<int, array{id: string, name: string, price: string}>}>
+     */
+    private function resolveCustomizations(MenuItem $item, array $requested): array
+    {
+        $configuredGroups = collect($item->customization_groups ?? [])->keyBy('id');
+        $resolved = [];
+        $selectedGroupIds = [];
+
+        foreach ($requested as $selection) {
+            if (in_array($selection['group_id'], $selectedGroupIds, true)) {
+                throw ApiException::invalid(
+                    'A customization group can only be selected once.',
+                    ['items' => ['A customization group was submitted more than once.']],
+                );
+            }
+
+            $selectedGroupIds[] = $selection['group_id'];
+            $optionIds = array_values(array_unique($selection['option_ids']));
+
+            if ($optionIds === []) {
+                continue;
+            }
+
+            $group = $configuredGroups->get($selection['group_id']);
+
+            if ($group === null || ($group['type'] === 'radio' && count($optionIds) > 1)) {
+                throw ApiException::invalid(
+                    'One or more selected options are no longer available.',
+                    ['items' => ['Update the dish options and try again.']],
+                );
+            }
+
+            $configuredOptions = collect($group['options'])->keyBy('id');
+            $options = [];
+
+            foreach ($optionIds as $optionId) {
+                $option = $configuredOptions->get($optionId);
+
+                if ($option === null) {
+                    throw ApiException::invalid(
+                        'One or more selected options are no longer available.',
+                        ['items' => ['Update the dish options and try again.']],
+                    );
+                }
+
+                $options[] = [
+                    'id' => $option['id'],
+                    'name' => $option['name'],
+                    'price' => number_format((float) $option['price'], 2, '.', ''),
+                ];
+            }
+
+            $resolved[] = [
+                'group_id' => $group['id'],
+                'group_name' => $group['name'],
+                'type' => $group['type'],
+                'options' => $options,
+            ];
+        }
+
+        return $resolved;
     }
 
     /**

@@ -42,9 +42,14 @@ const form = reactive({
     tax_rate: '0',
 });
 
-const hours = reactive<Record<string, { open: string; close: string; closed: boolean }>>(
+const hours = reactive<
+    Record<string, { open: string; close: string; closed: boolean }>
+>(
     Object.fromEntries(
-        days.map(([key]) => [key, { open: '11:00', close: '22:00', closed: false }]),
+        days.map(([key]) => [
+            key,
+            { open: '11:00', close: '22:00', closed: false },
+        ]),
     ),
 );
 
@@ -67,7 +72,8 @@ async function load(): Promise<void> {
         form.phone = restaurant.phone ?? '';
         form.address = restaurant.address ?? '';
         form.slot_minutes = restaurant.settings.slot_minutes;
-        form.auto_confirm_reservations = restaurant.settings.auto_confirm_reservations;
+        form.auto_confirm_reservations =
+            restaurant.settings.auto_confirm_reservations;
         form.delivery_fee = restaurant.settings.delivery_fee;
         form.min_delivery_amount = restaurant.settings.min_delivery_amount;
         form.tax_rate = restaurant.settings.tax_rate;
@@ -112,7 +118,9 @@ async function save(): Promise<void> {
             slot_minutes: form.slot_minutes,
             auto_confirm_reservations: form.auto_confirm_reservations,
             delivery_fee: Number.parseFloat(form.delivery_fee || '0'),
-            min_delivery_amount: Number.parseFloat(form.min_delivery_amount || '0'),
+            min_delivery_amount: Number.parseFloat(
+                form.min_delivery_amount || '0',
+            ),
             tax_rate: Number.parseFloat(form.tax_rate || '0'),
             opening_hours: openingHours,
         });
@@ -140,15 +148,19 @@ onMounted(() => void load());
     <div class="flex-1 px-5 py-6 lg:px-8">
         <p
             v-if="error"
-            class="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            class="rounded border border-[#f0c4c4] bg-[#fae9e9] px-4 py-3 text-sm text-[#7a1f1f]"
             role="alert"
         >
             {{ error }}
         </p>
 
         <div v-if="loading" class="space-y-4" aria-busy="true">
-            <div class="h-64 animate-pulse rounded border border-[#e3e5df] bg-white" />
-            <div class="h-48 animate-pulse rounded border border-[#e3e5df] bg-white" />
+            <div
+                class="h-64 animate-pulse rounded-lg border border-mori-line bg-mori-paper"
+            />
+            <div
+                class="h-48 animate-pulse rounded-lg border border-mori-line bg-mori-paper"
+            />
         </div>
 
         <EmptyState
@@ -158,42 +170,60 @@ onMounted(() => void load());
         />
 
         <form v-else class="grid gap-4 lg:grid-cols-2" @submit.prevent="save">
-            <section class="rounded border border-[#e3e5df] bg-white p-5">
-                <h2 class="text-sm font-semibold text-mori-ink">Profile</h2>
+            <section class="report-card p-5">
+                <h2 class="report-card-title">Profile</h2>
 
                 <div class="mt-4 space-y-4">
                     <div class="space-y-1.5">
                         <Label for="name">Restaurant name</Label>
                         <Input id="name" v-model="form.name" maxlength="255" />
-                        <p v-if="fieldError('name')" class="text-xs text-red-700">
+                        <p
+                            v-if="fieldError('name')"
+                            class="text-xs text-[#7a1f1f]"
+                        >
                             {{ fieldError('name') }}
                         </p>
                     </div>
                     <div class="space-y-1.5">
                         <Label for="phone">Phone</Label>
-                        <Input id="phone" v-model="form.phone" type="tel" maxlength="32" />
+                        <Input
+                            id="phone"
+                            v-model="form.phone"
+                            type="tel"
+                            maxlength="32"
+                        />
                     </div>
                     <div class="space-y-1.5">
                         <Label for="address">Address</Label>
-                        <Input id="address" v-model="form.address" maxlength="255" />
+                        <Input
+                            id="address"
+                            v-model="form.address"
+                            maxlength="255"
+                        />
                     </div>
                     <p class="text-xs text-mori-muted">
                         Storefront URL: /{{ restaurant.slug }} ·
-                        <span :class="isActive ? 'text-mori-sage' : 'text-mori-wine'">
+                        <span
+                            :class="
+                                isActive ? 'text-mori-sage' : 'text-mori-wine'
+                            "
+                        >
                             {{ isActive ? 'active' : 'inactive' }}
                         </span>
                     </p>
                 </div>
             </section>
 
-            <section class="rounded border border-[#e3e5df] bg-white p-5">
-                <h2 class="text-sm font-semibold text-mori-ink">
+            <section class="report-card p-5">
+                <h2 class="report-card-title">
                     Orders & reservations
                 </h2>
 
                 <div class="mt-4 space-y-4">
                     <div class="space-y-1.5">
-                        <Label for="slot_minutes">Reservation slot (minutes)</Label>
+                        <Label for="slot_minutes"
+                            >Reservation slot (minutes)</Label
+                        >
                         <Input
                             id="slot_minutes"
                             v-model.number="form.slot_minutes"
@@ -202,12 +232,17 @@ onMounted(() => void load());
                             max="480"
                             step="15"
                         />
-                        <p v-if="fieldError('slot_minutes')" class="text-xs text-red-700">
+                        <p
+                            v-if="fieldError('slot_minutes')"
+                            class="text-xs text-[#7a1f1f]"
+                        >
                             {{ fieldError('slot_minutes') }}
                         </p>
                     </div>
 
-                    <label class="flex items-center gap-2 text-sm text-mori-ink">
+                    <label
+                        class="flex items-center gap-2 text-sm text-mori-ink"
+                    >
                         <input
                             v-model="form.auto_confirm_reservations"
                             type="checkbox"
@@ -258,8 +293,12 @@ onMounted(() => void load());
                 </div>
             </section>
 
-            <section class="rounded border border-[#e3e5df] bg-white p-5 lg:col-span-2">
-                <h2 class="text-sm font-semibold text-mori-ink">Opening hours</h2>
+            <section
+                class="rounded border border-mori-line bg-mori-paper p-5 lg:col-span-2"
+            >
+                <h2 class="report-card-title">
+                    Opening hours
+                </h2>
                 <p class="mt-1 text-xs text-mori-muted">
                     Reservations outside these hours are refused by the API.
                 </p>
@@ -268,9 +307,11 @@ onMounted(() => void load());
                     <div
                         v-for="[key, label] in days"
                         :key="key"
-                        class="space-y-1.5 rounded border border-[#e3e5df] p-3"
+                        class="space-y-1.5 rounded border border-mori-line p-3"
                     >
-                        <p class="text-xs font-medium text-mori-ink">{{ label }}</p>
+                        <p class="mori-field-label">
+                            {{ label }}
+                        </p>
                         <div class="flex items-center gap-2">
                             <Input
                                 v-model="hours[key].open"
@@ -288,8 +329,13 @@ onMounted(() => void load());
                                 :aria-label="`${label} closing time`"
                             />
                         </div>
-                        <label class="flex items-center gap-1.5 text-xs text-mori-muted">
-                            <input v-model="hours[key].closed" type="checkbox" />
+                        <label
+                            class="flex items-center gap-1.5 text-xs text-mori-muted"
+                        >
+                            <input
+                                v-model="hours[key].closed"
+                                type="checkbox"
+                            />
                             Closed
                         </label>
                     </div>

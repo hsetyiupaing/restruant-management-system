@@ -25,6 +25,12 @@ class ReservationService
      * Return the visual table map for a slot: every active table with the
      * status the frontend should paint it in.
      *
+     * A slot is always the restaurant's `slot_minutes` long (90 by default). A
+     * table is "taken" when a PENDING or CONFIRMED reservation overlaps the
+     * window and "seated" when a SEATED one does; overlap is the usual
+     * half-open test, so a booking ending exactly as the next begins does not
+     * block it. A table too small for the party is never selectable.
+     *
      * @return Collection<int, array{
      *     id: int,
      *     label: string,
@@ -33,7 +39,9 @@ class ReservationService
      *     shape: 'ROUND'|'SQUARE'|'RECT',
      *     pos_x: int,
      *     pos_y: int,
-     *     status: 'AVAILABLE'|'RESERVED'|'OCCUPIED'|'UNAVAILABLE',
+     *     width: int,
+     *     height: int,
+     *     status: 'available'|'taken'|'seated'|'unavailable',
      *     fits_party: bool
      * }>
      */
@@ -41,10 +49,13 @@ class ReservationService
     {
         $end = $start->copy()->addMinutes($restaurant->slot_minutes);
 
+        // Natural order so table "10" follows "9" rather than "1" — the floor
+        // plan and the table list are read together.
         $tables = $restaurant->diningTables()
             ->where('is_active', true)
-            ->orderBy('label')
-            ->get();
+            ->get()
+            ->sortBy(fn (DiningTable $table): string => $table->label, SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
 
         $bookings = Reservation::query()
             ->where('restaurant_id', $restaurant->id)
@@ -58,13 +69,15 @@ class ReservationService
             /** @var Collection<int, Reservation> $tableBookings */
             $tableBookings = $bookings->get($table->id, collect());
 
-            $seated = $tableBookings->contains(fn (Reservation $reservation): bool => $reservation->status === ReservationStatus::Seated);
+            $seated = $tableBookings->contains(
+                fn (Reservation $reservation): bool => $reservation->status === ReservationStatus::Seated
+            );
 
             $status = match (true) {
-                $seated => 'OCCUPIED',
-                $tableBookings->isNotEmpty() => 'RESERVED',
-                ! $table->canHost($partySize) => 'UNAVAILABLE',
-                default => 'AVAILABLE',
+                $seated => 'seated',
+                $tableBookings->isNotEmpty() => 'taken',
+                ! $table->canHost($partySize) => 'unavailable',
+                default => 'available',
             };
 
             return [
@@ -75,6 +88,8 @@ class ReservationService
                 'shape' => $table->shape->value,
                 'pos_x' => $table->pos_x,
                 'pos_y' => $table->pos_y,
+                'width' => $table->width,
+                'height' => $table->height,
                 'status' => $status,
                 'fits_party' => $table->canHost($partySize),
             ];

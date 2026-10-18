@@ -18,12 +18,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $min_capacity
  * @property int $pos_x
  * @property int $pos_y
+ * @property int $width
+ * @property int $height
  * @property TableShape $shape
  * @property bool $is_active
  */
 #[Fillable([
     'restaurant_id', 'label', 'capacity', 'min_capacity',
-    'pos_x', 'pos_y', 'shape', 'is_active',
+    'pos_x', 'pos_y', 'width', 'height', 'shape', 'is_active',
 ])]
 class DiningTable extends Model
 {
@@ -40,6 +42,8 @@ class DiningTable extends Model
             'min_capacity' => 'integer',
             'pos_x' => 'integer',
             'pos_y' => 'integer',
+            'width' => 'integer',
+            'height' => 'integer',
             'shape' => TableShape::class,
             'is_active' => 'boolean',
         ];

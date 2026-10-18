@@ -35,8 +35,12 @@ const days = [
                 >
                     Visit
                 </h2>
-                <address class="mt-4 space-y-1 text-sm text-mori-muted not-italic">
-                    <p>{{ restaurant?.address ?? 'Address to be confirmed' }}</p>
+                <address
+                    class="mt-4 space-y-1 text-sm text-mori-muted not-italic"
+                >
+                    <p>
+                        {{ restaurant?.address ?? 'Address to be confirmed' }}
+                    </p>
                     <p v-if="restaurant?.phone">{{ restaurant.phone }}</p>
                 </address>
             </div>
@@ -79,11 +83,18 @@ const days = [
             <div
                 class="mori-container flex flex-wrap items-center justify-between gap-3 py-5 text-xs text-mori-muted"
             >
-                <p>&copy; {{ new Date().getFullYear() }} MORI. All rights reserved.</p>
+                <p>
+                    &copy; {{ new Date().getFullYear() }} MORI. All rights
+                    reserved.
+                </p>
                 <nav class="flex gap-5" aria-label="Footer">
                     <Link href="/menu" class="hover:text-mori-wine">Menu</Link>
-                    <Link href="/reserve" class="hover:text-mori-wine">Reservations</Link>
-                    <Link href="/admin" class="hover:text-mori-wine">Staff</Link>
+                    <Link href="/reserve" class="hover:text-mori-wine"
+                        >Reservations</Link
+                    >
+                    <Link href="/admin" class="hover:text-mori-wine"
+                        >Staff</Link
+                    >
                 </nav>
             </div>
         </div>

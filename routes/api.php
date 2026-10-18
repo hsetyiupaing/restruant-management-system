@@ -25,6 +25,7 @@ Route::prefix('v1')->group(function (): void {
     Route::get('restaurants/{slug}', [PublicRestaurantController::class, 'show']);
     Route::get('restaurants/{slug}/categories', [PublicRestaurantController::class, 'categories']);
     Route::get('restaurants/{slug}/menu-items', [PublicRestaurantController::class, 'menuItems']);
+    Route::get('dietary-tags', [PublicRestaurantController::class, 'dietaryTags']);
     Route::get('restaurants/{slug}/menu-items/{menuItem}', [PublicRestaurantController::class, 'menuItem'])
         ->scopeBindings();
     Route::get('restaurants/{slug}/availability', [PublicRestaurantController::class, 'availability']);
@@ -40,6 +41,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('auth/logout', [AuthController::class, 'logout']);
         Route::get('auth/me', [AuthController::class, 'me']);
         Route::patch('auth/me', [AuthController::class, 'updateProfile']);
+        Route::put('auth/me/food-restrictions', [AuthController::class, 'updateFoodRestrictions']);
 
         Route::get('orders', [OrderController::class, 'index']);
         Route::post('orders', [OrderController::class, 'store'])->middleware('throttle:20,1');
@@ -64,6 +66,12 @@ Route::prefix('v1')->group(function (): void {
             // not nested under a restaurant the client could point elsewhere.
             Route::post('payments/{payment}/refund', [Admin\PaymentController::class, 'refund']);
 
+            // Platform accounts. The policy restricts every action to a Super
+            // Admin; role assignment is additionally guarded against removing
+            // the last Super Admin.
+            Route::get('users', [Admin\UserController::class, 'index']);
+            Route::patch('users/{user}/role', [Admin\UserController::class, 'updateRole']);
+
             Route::prefix('restaurants/{restaurant}')->group(function (): void {
                 // Platform-level mutations.
                 Route::patch('/', [Admin\RestaurantController::class, 'update']);
@@ -86,6 +94,7 @@ Route::prefix('v1')->group(function (): void {
                     Route::delete('categories/{category}', [Admin\CategoryController::class, 'destroy']);
 
                     Route::get('menu-items', [Admin\MenuItemController::class, 'index']);
+                    Route::post('menu-items/image', [Admin\MenuItemController::class, 'uploadImage']);
                     Route::post('menu-items', [Admin\MenuItemController::class, 'store']);
                     Route::get('menu-items/{menuItem}', [Admin\MenuItemController::class, 'show']);
                     Route::patch('menu-items/{menuItem}', [Admin\MenuItemController::class, 'update']);

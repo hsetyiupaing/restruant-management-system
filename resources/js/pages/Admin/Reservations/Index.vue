@@ -69,7 +69,9 @@ function customer(row: Record<string, unknown>): {
     name?: string;
     email?: string;
 } {
-    return (row.customer as { name?: string; email?: string } | undefined) ?? {};
+    return (
+        (row.customer as { name?: string; email?: string } | undefined) ?? {}
+    );
 }
 
 function tableLabel(row: Record<string, unknown>): string {
@@ -125,7 +127,9 @@ async function setStatus(
         reservations.value = reservations.value.map((entry) =>
             entry.id === reservation.id ? response.data : entry,
         );
-        toast.success(`${reservation.customer?.name ?? 'Guest'} → ${statusLabel(status)}`);
+        toast.success(
+            `${reservation.customer?.name ?? 'Guest'} → ${statusLabel(status)}`,
+        );
     } catch (caught) {
         if (caught instanceof ApiError) {
             toast.error(errorMessage(caught));
@@ -143,7 +147,10 @@ watch(
     },
 );
 
-watch(() => filters.value.page, () => void load());
+watch(
+    () => filters.value.page,
+    () => void load(),
+);
 
 onMounted(() => void load());
 </script>
@@ -155,16 +162,14 @@ onMounted(() => void load());
 
     <div class="flex-1 px-5 py-6 lg:px-8">
         <div
-            class="flex flex-wrap items-end gap-3 rounded border border-[#e3e5df] bg-white p-4"
+            class="admin-filter-bar flex flex-wrap items-end gap-3 rounded border border-mori-line bg-mori-paper p-4"
         >
             <div class="min-w-40 space-y-1.5">
-                <label for="status" class="text-xs font-medium text-mori-muted">
-                    Status
-                </label>
+                <label for="status" class="mori-field-label"> Status </label>
                 <select
                     id="status"
                     v-model="filters.status"
-                    class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                    class="mori-field h-9 w-full"
                 >
                     <option
                         v-for="option in statuses"
@@ -177,10 +182,13 @@ onMounted(() => void load());
             </div>
 
             <div class="space-y-1.5">
-                <label for="date" class="text-xs font-medium text-mori-muted">
-                    Date
-                </label>
-                <Input id="date" v-model="filters.date" type="date" class="h-9" />
+                <label for="date" class="mori-field-label"> Date </label>
+                <Input
+                    id="date"
+                    v-model="filters.date"
+                    type="date"
+                    class="h-9"
+                />
             </div>
 
             <AppButton
@@ -198,7 +206,7 @@ onMounted(() => void load());
 
         <p
             v-if="error"
-            class="mt-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            class="mt-4 rounded border border-[#f0c4c4] bg-[#fae9e9] px-4 py-3 text-sm text-[#7a1f1f]"
             role="alert"
         >
             {{ error }}
@@ -279,7 +287,7 @@ onMounted(() => void load());
             <div class="flex gap-2">
                 <button
                     type="button"
-                    class="rounded border border-[#e3e5df] bg-white px-3 py-1.5 disabled:opacity-40"
+                    class="rounded border border-mori-field bg-mori-paper px-3 py-1.5 text-mori-ink hover:bg-mori-cream disabled:cursor-not-allowed disabled:border-mori-line disabled:bg-[#ede9e1] disabled:text-mori-muted"
                     :disabled="meta.current_page <= 1"
                     @click="filters.page = meta.current_page - 1"
                 >
@@ -287,7 +295,7 @@ onMounted(() => void load());
                 </button>
                 <button
                     type="button"
-                    class="rounded border border-[#e3e5df] bg-white px-3 py-1.5 disabled:opacity-40"
+                    class="rounded border border-mori-field bg-mori-paper px-3 py-1.5 text-mori-ink hover:bg-mori-cream disabled:cursor-not-allowed disabled:border-mori-line disabled:bg-[#ede9e1] disabled:text-mori-muted"
                     :disabled="meta.current_page >= meta.last_page"
                     @click="filters.page = meta.current_page + 1"
                 >

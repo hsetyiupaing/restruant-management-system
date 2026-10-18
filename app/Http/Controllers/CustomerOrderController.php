@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Api\OrderController as ApiOrderController;
 use App\Http\Resources\RestaurantResource;
-use App\Models\Restaurant;
+use App\Support\RestaurantContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -48,18 +48,14 @@ class CustomerOrderController extends Controller
     }
 
     /**
-     * The storefront is a single-venue site: prefer the configured slug, then
-     * fall back to any active restaurant so a fresh database still renders.
+     * The storefront is a single-venue site, resolved through the same helper
+     * the back office uses so both always address the same restaurant.
      *
      * @return array<string, mixed>|null
      */
     private function storefrontRestaurant(): ?array
     {
-        $restaurant = Restaurant::query()
-            ->where('slug', config('restaurant.storefront_slug'))
-            ->where('is_active', true)
-            ->first()
-            ?? Restaurant::query()->where('is_active', true)->orderBy('name')->first();
+        $restaurant = RestaurantContext::storefrontRestaurant();
 
         return $restaurant === null
             ? null

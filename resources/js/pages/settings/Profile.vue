@@ -73,6 +73,23 @@ const user = computed(() => page.props.auth.user);
                 <InputError class="mt-2" :message="errors.email" />
             </div>
 
+            <div class="grid gap-2">
+                <Label for="phone"
+                    >Phone
+                    <span class="text-muted-foreground">(optional)</span></Label
+                >
+                <Input
+                    id="phone"
+                    type="tel"
+                    class="mt-1 block w-full"
+                    name="phone"
+                    :default-value="user.phone ?? ''"
+                    autocomplete="tel"
+                    placeholder="+66 81 234 5678"
+                />
+                <InputError class="mt-2" :message="errors.phone" />
+            </div>
+
             <div v-if="page.props.mustVerifyEmail && !user.email_verified_at">
                 <p class="-mt-4 text-sm text-muted-foreground">
                     Your email address is unverified.
@@ -87,7 +104,7 @@ const user = computed(() => page.props.auth.user);
 
                 <div
                     v-if="page.props.status === 'verification-link-sent'"
-                    class="mt-2 text-sm font-medium text-green-600"
+                    class="mt-2 text-sm font-medium text-[#3f5c42]"
                 >
                     A new verification link has been sent to your email address.
                 </div>

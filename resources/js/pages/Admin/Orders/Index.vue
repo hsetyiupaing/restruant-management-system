@@ -92,7 +92,10 @@ watch(
     },
 );
 
-watch(() => filters.value.page, () => void load());
+watch(
+    () => filters.value.page,
+    () => void load(),
+);
 
 onMounted(() => void load());
 </script>
@@ -100,42 +103,37 @@ onMounted(() => void load());
 <template>
     <Head title="Orders · MORI Admin" />
 
-    <AdminTopbar
-        title="Order management"
-        :subtitle="restaurant.name"
-    />
+    <AdminTopbar title="Order management" :subtitle="restaurant.name" />
 
     <div class="flex-1 px-5 py-6 lg:px-8">
         <div
-            class="flex flex-wrap items-end gap-3 rounded border border-[#e3e5df] bg-white p-4"
+            class="admin-filter-bar flex flex-wrap items-end gap-3 rounded border border-mori-line bg-mori-paper p-4"
         >
             <div class="min-w-40 space-y-1.5">
-                <label for="status" class="text-xs font-medium text-mori-muted">
-                    Status
-                </label>
+                <label for="status" class="mori-field-label"> Status </label>
                 <select
                     id="status"
                     v-model="filters.status"
-                    class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                    class="mori-field h-9 w-full"
                 >
                     <option
                         v-for="option in statuses"
                         :key="option || 'all'"
                         :value="option"
                     >
-                        {{ option ? option.replace(/_/g, ' ') : 'All statuses' }}
+                        {{
+                            option ? option.replace(/_/g, ' ') : 'All statuses'
+                        }}
                     </option>
                 </select>
             </div>
 
             <div class="min-w-36 space-y-1.5">
-                <label for="order_type" class="text-xs font-medium text-mori-muted">
-                    Type
-                </label>
+                <label for="order_type" class="mori-field-label"> Type </label>
                 <select
                     id="order_type"
                     v-model="filters.order_type"
-                    class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                    class="mori-field h-9 w-full"
                 >
                     <option value="">All types</option>
                     <option value="PICKUP">Pickup</option>
@@ -144,13 +142,13 @@ onMounted(() => void load());
             </div>
 
             <div class="min-w-36 space-y-1.5">
-                <label for="payment_status" class="text-xs font-medium text-mori-muted">
+                <label for="payment_status" class="mori-field-label">
                     Payment
                 </label>
                 <select
                     id="payment_status"
                     v-model="filters.payment_status"
-                    class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                    class="mori-field h-9 w-full"
                 >
                     <option value="">Any</option>
                     <option value="UNPAID">Unpaid</option>
@@ -161,16 +159,17 @@ onMounted(() => void load());
             </div>
 
             <div class="space-y-1.5">
-                <label for="from" class="text-xs font-medium text-mori-muted">
-                    From
-                </label>
-                <Input id="from" v-model="filters.from" type="date" class="h-9" />
+                <label for="from" class="mori-field-label"> From </label>
+                <Input
+                    id="from"
+                    v-model="filters.from"
+                    type="date"
+                    class="h-9"
+                />
             </div>
 
             <div class="space-y-1.5">
-                <label for="to" class="text-xs font-medium text-mori-muted">
-                    To
-                </label>
+                <label for="to" class="mori-field-label"> To </label>
                 <Input id="to" v-model="filters.to" type="date" class="h-9" />
             </div>
 
@@ -182,7 +181,7 @@ onMounted(() => void load());
 
         <p
             v-if="error"
-            class="mt-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            class="mt-4 rounded border border-[#f0c4c4] bg-[#fae9e9] px-4 py-3 text-sm text-[#7a1f1f]"
             role="alert"
         >
             {{ error }}
@@ -202,7 +201,7 @@ onMounted(() => void load());
             <div class="flex gap-2">
                 <button
                     type="button"
-                    class="rounded border border-[#e3e5df] bg-white px-3 py-1.5 disabled:opacity-40"
+                    class="rounded border border-mori-field bg-mori-paper px-3 py-1.5 text-mori-ink hover:bg-mori-cream disabled:cursor-not-allowed disabled:border-mori-line disabled:bg-[#ede9e1] disabled:text-mori-muted"
                     :disabled="meta.current_page <= 1"
                     @click="filters.page = meta.current_page - 1"
                 >
@@ -210,7 +209,7 @@ onMounted(() => void load());
                 </button>
                 <button
                     type="button"
-                    class="rounded border border-[#e3e5df] bg-white px-3 py-1.5 disabled:opacity-40"
+                    class="rounded border border-mori-field bg-mori-paper px-3 py-1.5 text-mori-ink hover:bg-mori-cream disabled:cursor-not-allowed disabled:border-mori-line disabled:bg-[#ede9e1] disabled:text-mori-muted"
                     :disabled="meta.current_page >= meta.last_page"
                     @click="filters.page = meta.current_page + 1"
                 >

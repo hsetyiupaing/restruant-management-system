@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'storefront_slug' => env('RESTAURANT_STOREFRONT_SLUG', 'ember-and-oak'),
+    'storefront_slug' => env('RESTAURANT_STOREFRONT_SLUG', 'mori-thai-kitchen'),
 
     /*
     |--------------------------------------------------------------------------

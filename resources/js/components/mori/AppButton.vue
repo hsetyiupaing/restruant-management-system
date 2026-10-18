@@ -4,7 +4,7 @@ import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { cn } from '@/lib/utils';
 
-type Variant = 'primary' | 'outline' | 'ghost' | 'dark' | 'light';
+type Variant = 'primary' | 'outline' | 'ghost' | 'dark' | 'light' | 'accent';
 type Size = 'sm' | 'md' | 'lg';
 
 const props = withDefaults(
@@ -30,14 +30,22 @@ const props = withDefaults(
     },
 );
 
+/**
+ * Text/fill pairs, all measured (WCAG AA):
+ *   primary   #FFFFFF on #5A1F2B → 12.61:1, hover #451720 → 15.04:1
+ *   accent    #1A1A1C on #A8844C →  5.02:1 (white on brass is only 3.46:1)
+ *   outline   #1A1A1C on #FFFFFF → 17.38:1, hairline #8A8377 → 3.75:1
+ *   disabled  #6F6A62 on #EDE9E1 →  4.60:1
+ */
 const variants: Record<Variant, string> = {
     primary:
         'bg-mori-wine text-white hover:bg-mori-wine-hover focus-visible:outline-mori-wine',
+    accent: 'bg-mori-brass text-mori-ink hover:bg-[#b08a50] focus-visible:outline-mori-brass',
     outline:
-        'border border-mori-line bg-transparent text-mori-ink hover:bg-mori-cream focus-visible:outline-mori-ink',
+        'border border-mori-field bg-mori-paper text-mori-ink hover:bg-mori-cream focus-visible:outline-mori-wine',
     ghost:
-        'bg-transparent text-mori-ink hover:bg-mori-cream focus-visible:outline-mori-ink',
-    dark: 'bg-mori-ink text-mori-paper hover:bg-mori-ink/90 focus-visible:outline-mori-ink',
+        'bg-transparent text-mori-ink hover:bg-mori-cream focus-visible:outline-mori-wine',
+    dark: 'bg-mori-ink text-white hover:bg-mori-ink/90 focus-visible:outline-mori-ink',
     light: 'bg-mori-cream text-mori-ink hover:bg-mori-sand/60 focus-visible:outline-mori-ink',
 };
 
@@ -49,8 +57,7 @@ const sizes: Record<Size, string> = {
 
 const classes = computed(() => [
     'inline-flex items-center justify-center gap-2 rounded font-medium transition-colors',
-    'focus-visible:outline-2 focus-visible:outline-offset-2',
-    'disabled:pointer-events-none disabled:opacity-50',
+    'disabled:pointer-events-none',
     variants[props.variant],
     sizes[props.size],
     props.block ? 'w-full' : '',
@@ -73,7 +80,14 @@ const classes = computed(() => [
         v-else
         :type="type"
         :disabled="disabled || loading"
-        :class="cn(classes)"
+        :class="
+            cn(
+                classes,
+                disabled || loading
+                    ? 'cursor-not-allowed border-mori-line bg-[#ede9e1] text-mori-muted'
+                    : '',
+            )
+        "
     >
         <span
             v-if="loading"

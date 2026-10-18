@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\DeliveryStatus;
 use App\Enums\MembershipRole;
+use App\Enums\MenuCourse;
 use App\Enums\OrderStatus;
 use App\Enums\OrderType;
 use App\Enums\PaymentMethod;
@@ -213,6 +214,7 @@ class DemoDataSeeder extends Seeder
                         ['restaurant_id' => $restaurant->id, 'name' => $itemData['name']],
                         [
                             'category_id' => $category->id,
+                            'course' => $this->courseForCategory($categoryData['name']),
                             'description' => $itemData['description'],
                             'price' => $itemData['price'],
                             'is_available' => true,
@@ -224,6 +226,21 @@ class DemoDataSeeder extends Seeder
         }
 
         return $items;
+    }
+
+    /**
+     * Demo categories use free-form names, so the course is inferred from the
+     * category the dish belongs to. New menu work sets the course explicitly.
+     */
+    private function courseForCategory(string $category): MenuCourse
+    {
+        return match (true) {
+            str_contains($category, 'Dessert') => MenuCourse::Dessert,
+            str_contains($category, 'Starter'),
+            str_contains($category, 'Small Plate'),
+            str_contains($category, 'Side') => MenuCourse::Starter,
+            default => MenuCourse::Main,
+        };
     }
 
     /**

@@ -5,6 +5,7 @@ use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\Restaurant;
 use App\Models\User;
+use App\Support\RestaurantContext;
 
 test('the home page renders the configured restaurant with featured dishes', function () {
     $restaurant = Restaurant::factory()->openDaily()->create([
@@ -99,4 +100,58 @@ test('a customer cannot open another customer order', function () {
     $this->actingAs(User::factory()->create())
         ->get(route('orders.show', $order))
         ->assertNotFound();
+});
+
+test('a dish detail page renders the requested slug for the Vue router', function () {
+    $restaurant = Restaurant::factory()->openDaily()->create(['slug' => 'mori-thai-kitchen']);
+    $category = Category::factory()->for($restaurant)->create();
+
+    MenuItem::factory()->for($restaurant)->for($category)->create([
+        'name' => 'Pad Thai',
+        'slug' => 'pad-thai',
+    ]);
+
+    $this->get(route('menu.show', 'pad-thai'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Storefront/Dish')
+            ->where('dish', 'pad-thai')
+            ->where('restaurant.slug', 'mori-thai-kitchen')
+        );
+});
+
+test('a dish detail page still renders when the slug does not exist', function () {
+    $this->get(route('menu.show', 'missing-dish'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Storefront/Dish')
+            ->where('dish', 'missing-dish')
+        );
+});
+
+test('a platform administrator sees the storefront restaurant in the back office', function () {
+    $storefront = Restaurant::factory()->openDaily()->create([
+        'slug' => config('restaurant.storefront_slug'),
+        'name' => 'Mori Kitchen',
+    ]);
+    // Alphabetically first, which is what an arbitrary fallback would pick.
+    Restaurant::factory()->create(['name' => 'Aardvark Diner']);
+
+    $superAdmin = User::factory()->superAdmin()->create();
+
+    expect(RestaurantContext::forUser($superAdmin)->id)
+        ->toBe($storefront->id);
+
+    $this->actingAs($superAdmin)
+        ->get('/admin/menu')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Admin/Menu/Index')
+            ->where('restaurant.id', $storefront->id)
+        );
+
+    // The customer side resolves the same venue.
+    $this->get(route('menu'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('restaurant.id', $storefront->id));
 });

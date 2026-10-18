@@ -7,6 +7,7 @@ type Tone =
     | 'wine'
     | 'sage'
     | 'sand'
+    | 'brass'
     | 'amber'
     | 'blue'
     | 'green'
@@ -20,15 +21,22 @@ const props = withDefaults(
     { tone: 'neutral' },
 );
 
+/**
+ * Every pair below is measured against its own background: the lowest is
+ * 5.08:1 (brass), so all of them clear WCAG AA for text at 12px. The previous
+ * tones used `bg-*-100 text-*-900`, which passed, but `wine`/`sage` used a 10%
+ * tint that dropped the label to ~3.5:1 on a light card.
+ */
 const tones: Record<Tone, string> = {
     neutral: 'bg-mori-cream text-mori-ink',
-    wine: 'bg-mori-wine/10 text-mori-wine',
-    sage: 'bg-mori-sage/10 text-mori-sage',
-    sand: 'bg-mori-sand/40 text-mori-ink',
-    amber: 'bg-amber-100 text-amber-900',
-    blue: 'bg-sky-100 text-sky-900',
-    green: 'bg-emerald-100 text-emerald-900',
-    red: 'bg-red-100 text-red-800',
+    wine: 'bg-[#f2e8ea] text-mori-wine',
+    sage: 'bg-[#ecf1ea] text-mori-sage',
+    sand: 'bg-[#f4eee1] text-[#5c4a2a]',
+    brass: 'bg-[#f6efe1] text-[#7e6034]',
+    amber: 'bg-[#fbf0d9] text-[#6b4a12]',
+    blue: 'bg-[#e8eef5] text-[#1f3a5f]',
+    green: 'bg-[#ecf1ea] text-[#3f5c42]',
+    red: 'bg-[#fae9e9] text-[#7a1f1f]',
 };
 
 const classes = computed(() => [

@@ -26,6 +26,8 @@ class DiningTableResource extends JsonResource
             'shape' => $this->shape->value,
             'pos_x' => $this->pos_x,
             'pos_y' => $this->pos_y,
+            'width' => $this->width,
+            'height' => $this->height,
             'is_active' => $this->is_active,
         ];
     }

@@ -65,6 +65,104 @@ test('a pickup order is priced entirely from the database', function () {
         ->and($order->statusHistory()->count())->toBe(1);
 });
 
+test('selected dish options are priced and snapshotted from the menu configuration', function () {
+    ['restaurant' => $restaurant, 'item' => $item] = checkoutFixture();
+    $customer = User::factory()->create();
+    $item->update(['customization_groups' => [
+        [
+            'id' => 'size',
+            'name' => 'Size',
+            'type' => 'radio',
+            'options' => [
+                ['id' => 'regular', 'name' => 'Regular', 'price' => 0],
+                ['id' => 'large', 'name' => 'Large', 'price' => 2.5],
+            ],
+        ],
+        [
+            'id' => 'extras',
+            'name' => 'Extras',
+            'type' => 'addons',
+            'options' => [
+                ['id' => 'egg', 'name' => 'Add egg', 'price' => 1],
+            ],
+        ],
+    ]]);
+
+    $response = $this->actingAs($customer)->postJson('/api/v1/orders', [
+        'restaurant_id' => $restaurant->id,
+        'order_type' => OrderType::Pickup->value,
+        'items' => [[
+            'menu_item_id' => $item->id,
+            'quantity' => 2,
+            'customizations' => [
+                ['group_id' => 'size', 'option_ids' => ['large']],
+                ['group_id' => 'extras', 'option_ids' => ['egg']],
+            ],
+        ]],
+    ]);
+
+    $response->assertCreated()
+        ->assertJsonPath('data.items.0.unit_price', '13.50')
+        ->assertJsonPath('data.items.0.line_total', '27.00')
+        ->assertJsonPath('data.items.0.selected_customizations.0.group_name', 'Size')
+        ->assertJsonPath('data.items.0.selected_customizations.0.options.0.name', 'Large')
+        ->assertJsonPath('data.totals.subtotal', '27.00');
+});
+
+test('orders reject options that are not configured for the selected dish', function () {
+    ['restaurant' => $restaurant, 'item' => $item] = checkoutFixture();
+    $item->update(['customization_groups' => [[
+        'id' => 'size',
+        'name' => 'Size',
+        'type' => 'radio',
+        'options' => [['id' => 'regular', 'name' => 'Regular', 'price' => 0]],
+    ]]]);
+
+    $this->actingAs(User::factory()->create())->postJson('/api/v1/orders', [
+        'restaurant_id' => $restaurant->id,
+        'order_type' => OrderType::Pickup->value,
+        'items' => [[
+            'menu_item_id' => $item->id,
+            'quantity' => 1,
+            'customizations' => [
+                ['group_id' => 'size', 'option_ids' => ['made-up-option']],
+            ],
+        ]],
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('items');
+
+    expect(Order::query()->count())->toBe(0);
+});
+
+test('orders reject the same customization group when it is submitted twice', function () {
+    ['restaurant' => $restaurant, 'item' => $item] = checkoutFixture();
+    $item->update(['customization_groups' => [[
+        'id' => 'size',
+        'name' => 'Size',
+        'type' => 'radio',
+        'options' => [
+            ['id' => 'regular', 'name' => 'Regular', 'price' => 0],
+            ['id' => 'large', 'name' => 'Large', 'price' => 2],
+        ],
+    ]]]);
+
+    $this->actingAs(User::factory()->create())->postJson('/api/v1/orders', [
+        'restaurant_id' => $restaurant->id,
+        'order_type' => OrderType::Pickup->value,
+        'items' => [[
+            'menu_item_id' => $item->id,
+            'quantity' => 1,
+            'customizations' => [
+                ['group_id' => 'size', 'option_ids' => ['regular']],
+                ['group_id' => 'size', 'option_ids' => ['large']],
+            ],
+        ]],
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('items');
+
+    expect(Order::query()->count())->toBe(0);
+});
+
 test('a delivery order adds the restaurant delivery fee and stores delivery details', function () {
     ['restaurant' => $restaurant, 'item' => $item] = checkoutFixture();
     $customer = User::factory()->create();

@@ -68,7 +68,10 @@ const nextStatuses = computed<OrderStatus[]>(() => {
     return Array.from(new Set([...staff, ...admin])).filter((status) => {
         // A pickup order in READY goes straight to COMPLETED; the API rejects
         // OUT_FOR_DELIVERY for it, so keep it out of the menu.
-        if (status === 'OUT_FOR_DELIVERY' && order.value?.order_type !== 'DELIVERY') {
+        if (
+            status === 'OUT_FOR_DELIVERY' &&
+            order.value?.order_type !== 'DELIVERY'
+        ) {
             return false;
         }
 
@@ -207,15 +210,19 @@ onMounted(() => void load());
 
         <p
             v-if="error"
-            class="mt-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            class="mt-4 rounded border border-[#f0c4c4] bg-[#fae9e9] px-4 py-3 text-sm text-[#7a1f1f]"
             role="alert"
         >
             {{ error }}
         </p>
 
         <div v-if="loading" class="mt-4 space-y-4" aria-busy="true">
-            <div class="h-24 animate-pulse rounded border border-[#e3e5df] bg-white" />
-            <div class="h-64 animate-pulse rounded border border-[#e3e5df] bg-white" />
+            <div
+                class="h-24 animate-pulse rounded-lg border border-mori-line bg-mori-paper"
+            />
+            <div
+                class="h-64 animate-pulse rounded-lg border border-mori-line bg-mori-paper"
+            />
         </div>
 
         <EmptyState
@@ -227,13 +234,15 @@ onMounted(() => void load());
 
         <template v-else>
             <header
-                class="mt-4 flex flex-wrap items-start justify-between gap-4 rounded border border-[#e3e5df] bg-white p-5"
+                class="mt-4 flex flex-wrap items-start justify-between gap-4 rounded border border-mori-line bg-mori-paper p-5"
             >
                 <div>
                     <div class="flex flex-wrap items-center gap-2">
                         <StatusBadge :status="order.status" />
                         <StatusBadge :status="order.payment_status" />
-                        <span class="text-xs tracking-wide text-mori-muted uppercase">
+                        <span
+                            class="text-xs tracking-wide text-mori-muted uppercase"
+                        >
                             {{ statusLabel(order.order_type) }}
                         </span>
                     </div>
@@ -260,7 +269,11 @@ onMounted(() => void load());
                     <AppButton
                         v-for="status in nextStatuses"
                         :key="status"
-                        :variant="status === 'CANCELLED' || status === 'REJECTED' ? 'outline' : 'primary'"
+                        :variant="
+                            status === 'CANCELLED' || status === 'REJECTED'
+                                ? 'outline'
+                                : 'primary'
+                        "
                         size="sm"
                         @click="askTransition(status)"
                     >
@@ -271,8 +284,10 @@ onMounted(() => void load());
 
             <div class="mt-4 grid gap-4 lg:grid-cols-[1fr_340px]">
                 <div class="space-y-4">
-                    <section class="rounded border border-[#e3e5df] bg-white">
-                        <h2 class="border-b border-[#e3e5df] px-5 py-3 text-sm font-semibold text-mori-ink">
+                    <section class="report-card">
+                        <h2
+                            class="report-card-title border-b border-mori-line px-5 py-3"
+                        >
                             Items
                         </h2>
                         <table class="w-full text-sm">
@@ -280,7 +295,7 @@ onMounted(() => void load());
                                 <tr
                                     v-for="item in order.items ?? []"
                                     :key="item.id"
-                                    class="border-b border-[#e3e5df]/60 last:border-0"
+                                    class="border-b border-mori-line/60 last:border-0"
                                 >
                                     <td class="px-5 py-3">
                                         <p class="font-medium text-mori-ink">
@@ -292,28 +307,60 @@ onMounted(() => void load());
                                         >
                                             {{ item.note }}
                                         </p>
+                                        <ul
+                                            v-if="
+                                                item.selected_customizations
+                                                    ?.length
+                                            "
+                                            class="mt-1 space-y-0.5 text-xs text-mori-muted"
+                                        >
+                                            <li
+                                                v-for="group in item.selected_customizations"
+                                                :key="group.group_id"
+                                            >
+                                                {{ group.group_name }}:
+                                                {{
+                                                    group.options
+                                                        .map(
+                                                            (option) =>
+                                                                option.name,
+                                                        )
+                                                        .join(', ')
+                                                }}
+                                            </li>
+                                        </ul>
                                     </td>
-                                    <td class="px-3 py-3 text-right text-mori-muted">
+                                    <td
+                                        class="px-3 py-3 text-right text-mori-muted"
+                                    >
                                         × {{ item.quantity }}
                                     </td>
-                                    <td class="px-5 py-3 text-right whitespace-nowrap">
+                                    <td
+                                        class="px-5 py-3 text-right whitespace-nowrap"
+                                    >
                                         {{ formatMoney(item.line_total) }}
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
 
-                        <dl class="space-y-1.5 border-t border-[#e3e5df] px-5 py-4 text-sm">
+                        <dl
+                            class="space-y-1.5 border-t border-mori-line px-5 py-4 text-sm"
+                        >
                             <div class="flex justify-between">
                                 <dt class="text-mori-muted">Subtotal</dt>
-                                <dd>{{ formatMoney(order.totals.subtotal) }}</dd>
+                                <dd>
+                                    {{ formatMoney(order.totals.subtotal) }}
+                                </dd>
                             </div>
                             <div
                                 v-if="Number(order.totals.delivery_fee) > 0"
                                 class="flex justify-between"
                             >
                                 <dt class="text-mori-muted">Delivery</dt>
-                                <dd>{{ formatMoney(order.totals.delivery_fee) }}</dd>
+                                <dd>
+                                    {{ formatMoney(order.totals.delivery_fee) }}
+                                </dd>
                             </div>
                             <div
                                 v-if="Number(order.totals.tax) > 0"
@@ -331,13 +378,8 @@ onMounted(() => void load());
                         </dl>
                     </section>
 
-                    <section
-                        v-if="order.delivery"
-                        class="rounded border border-[#e3e5df] bg-white p-5"
-                    >
-                        <h2 class="text-sm font-semibold text-mori-ink">
-                            Delivery
-                        </h2>
+                    <section v-if="order.delivery" class="report-card p-5">
+                        <h2 class="report-card-title">Delivery</h2>
                         <p class="mt-2 text-sm text-mori-ink">
                             {{ order.delivery.recipient_name }} ·
                             {{ order.delivery.recipient_phone }}
@@ -353,26 +395,23 @@ onMounted(() => void load());
                         </p>
                     </section>
 
-                    <section
-                        v-if="order.customer_note"
-                        class="rounded border border-[#e3e5df] bg-white p-5"
-                    >
-                        <h2 class="text-sm font-semibold text-mori-ink">
-                            Customer note
-                        </h2>
+                    <section v-if="order.customer_note" class="report-card p-5">
+                        <h2 class="report-card-title">Customer note</h2>
                         <p class="mt-2 text-sm text-mori-muted">
                             {{ order.customer_note }}
                         </p>
                     </section>
 
-                    <section class="rounded border border-[#e3e5df] bg-white">
-                        <h2 class="border-b border-[#e3e5df] px-5 py-3 text-sm font-semibold text-mori-ink">
+                    <section class="report-card">
+                        <h2
+                            class="report-card-title border-b border-mori-line px-5 py-3"
+                        >
                             Payments
                         </h2>
 
                         <ul
                             v-if="order.payments?.length"
-                            class="divide-y divide-[#e3e5df]/60"
+                            class="divide-y divide-mori-line/60"
                         >
                             <li
                                 v-for="payment in order.payments"
@@ -411,8 +450,12 @@ onMounted(() => void load());
                         </p>
 
                         <form
-                            v-if="!['CANCELLED', 'REJECTED', 'REFUNDED'].includes(order.status)"
-                            class="grid gap-3 border-t border-[#e3e5df] px-5 py-4 sm:grid-cols-4"
+                            v-if="
+                                !['CANCELLED', 'REJECTED', 'REFUNDED'].includes(
+                                    order.status,
+                                )
+                            "
+                            class="grid gap-3 border-t border-mori-line px-5 py-4 sm:grid-cols-4"
                             @submit.prevent="recordPayment"
                         >
                             <div class="space-y-1.5">
@@ -420,7 +463,7 @@ onMounted(() => void load());
                                 <select
                                     id="method"
                                     v-model="paymentForm.method"
-                                    class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                                    class="mori-field h-9 w-full"
                                 >
                                     <option value="CASH">Cash</option>
                                     <option value="CARD">Card</option>
@@ -440,7 +483,10 @@ onMounted(() => void load());
                             </div>
                             <div class="space-y-1.5">
                                 <Label for="provider_ref">Reference</Label>
-                                <Input id="provider_ref" v-model="paymentForm.provider_ref" />
+                                <Input
+                                    id="provider_ref"
+                                    v-model="paymentForm.provider_ref"
+                                />
                             </div>
                             <div class="flex items-end">
                                 <AppButton
@@ -457,10 +503,8 @@ onMounted(() => void load());
                 </div>
 
                 <aside class="space-y-4">
-                    <section class="rounded border border-[#e3e5df] bg-white p-5">
-                        <h2 class="text-sm font-semibold text-mori-ink">
-                            Balance
-                        </h2>
+                    <section class="report-card p-5">
+                        <h2 class="report-card-title">Balance</h2>
                         <dl class="mt-3 space-y-2 text-sm">
                             <div class="flex justify-between">
                                 <dt class="text-mori-muted">Paid</dt>
@@ -477,16 +521,14 @@ onMounted(() => void load());
 
                     <section
                         v-if="order.status_history?.length"
-                        class="rounded border border-[#e3e5df] bg-white p-5"
+                        class="report-card p-5"
                     >
-                        <h2 class="text-sm font-semibold text-mori-ink">
-                            Status history
-                        </h2>
+                        <h2 class="report-card-title">Status history</h2>
                         <ol class="mt-4 space-y-4">
                             <li
                                 v-for="entry in order.status_history"
                                 :key="entry.id"
-                                class="relative border-l border-[#e3e5df] pl-4"
+                                class="relative border-l border-mori-line pl-4"
                             >
                                 <span
                                     class="absolute top-1 -left-[5px] size-2 rounded-full bg-mori-wine"

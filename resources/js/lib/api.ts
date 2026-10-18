@@ -34,17 +34,12 @@ function readCookie(name: string): string | null {
         return null;
     }
 
-    const match = document.cookie.match(
-        new RegExp(`(?:^|; )${name}=([^;]*)`),
-    );
+    const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
 
     return match ? decodeURIComponent(match[1]) : null;
 }
 
-function buildUrl(
-    path: string,
-    query?: RequestOptions['query'],
-): string {
+function buildUrl(path: string, query?: RequestOptions['query']): string {
     const url = new URL(`${API_BASE}${path}`, window.location.origin);
 
     Object.entries(query ?? {}).forEach(([key, value]) => {
@@ -75,18 +70,20 @@ async function request<T>(
         }
     }
 
-    if (options.body !== undefined) {
+    let requestBody: BodyInit | undefined;
+
+    if (typeof FormData !== 'undefined' && options.body instanceof FormData) {
+        requestBody = options.body;
+    } else if (options.body !== undefined) {
         headers['Content-Type'] = 'application/json';
+        requestBody = JSON.stringify(options.body);
     }
 
     const response = await fetch(buildUrl(path, options.query), {
         method,
         headers,
         credentials: 'same-origin',
-        body:
-            options.body === undefined
-                ? undefined
-                : JSON.stringify(options.body),
+        body: requestBody,
     });
 
     if (response.status === 204) {
@@ -117,6 +114,8 @@ export const api = {
     get: <T>(path: string, options?: RequestOptions) =>
         request<T>('GET', path, options),
     post: <T>(path: string, body?: unknown, options?: RequestOptions) =>
+        request<T>('POST', path, { ...options, body }),
+    postFormData: <T>(path: string, body: FormData, options?: Omit<RequestOptions, 'body'>) =>
         request<T>('POST', path, { ...options, body }),
     patch: <T>(path: string, body?: unknown, options?: RequestOptions) =>
         request<T>('PATCH', path, { ...options, body }),

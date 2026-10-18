@@ -50,6 +50,20 @@ class DashboardController extends Controller
     }
 
     /**
+     * Platform account administration. Gated here as well as in the API: the
+     * page itself is only for Super Admins, even though the back office is
+     * otherwise membership-based.
+     */
+    public function users(Request $request): Response
+    {
+        abort_unless($request->user()->isSuperAdmin(), 403);
+
+        return Inertia::render('Admin/Users/Index', [
+            'canAssignRoles' => true,
+        ]);
+    }
+
+    /**
      * @param  array<string, mixed>  $props
      */
     private function render(Request $request, string $page, array $props = []): Response

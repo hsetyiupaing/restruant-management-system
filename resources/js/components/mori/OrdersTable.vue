@@ -39,7 +39,9 @@ const columns = computed<Column[]>(() => {
 
     if (props.compact) {
         return base.filter((column) =>
-            ['order_number', 'status', 'total', 'created_at'].includes(column.key),
+            ['order_number', 'status', 'total', 'created_at'].includes(
+                column.key,
+            ),
         );
     }
 
@@ -48,7 +50,9 @@ const columns = computed<Column[]>(() => {
 
 // DataTable is generic over a row shape; orders are structurally compatible
 // once widened, and the cell slots below render the typed fields.
-const rows = computed(() => props.orders as unknown as Record<string, unknown>[]);
+const rows = computed(
+    () => props.orders as unknown as Record<string, unknown>[],
+);
 
 function selectRow(row: Record<string, unknown>): void {
     emit('select', row as unknown as Order);
@@ -85,10 +89,7 @@ function orderTotal(row: Record<string, unknown>): string {
                 >
                     {{ row.order_number }}
                 </Link>
-                <span
-                    v-if="customerName(row)"
-                    class="text-xs text-mori-muted"
-                >
+                <span v-if="customerName(row)" class="text-xs text-mori-muted">
                     {{ customerName(row) }}
                 </span>
             </div>

@@ -63,6 +63,7 @@ The application exposes API endpoints under `/api/v1` using JSON responses and L
 - `POST /api/v1/auth/logout`
 - `GET /api/v1/auth/me`
 - `PATCH /api/v1/auth/me`
+- `PUT /api/v1/auth/me/food-restrictions`
 - `GET /api/v1/orders`
 - `POST /api/v1/orders`
 - `GET /api/v1/orders/{order}`
@@ -85,6 +86,11 @@ The application exposes API endpoints under `/api/v1` using JSON responses and L
 - `GET /api/v1/admin/restaurants/{restaurant}/members`
 - `GET /api/v1/admin/restaurants/{restaurant}/kpis`
 
+### Super Admin only
+
+- `GET /api/v1/admin/users`
+- `PATCH /api/v1/admin/users/{user}/role`
+
 ## Setup
 
 1. Install dependencies:
@@ -96,6 +102,43 @@ The application exposes API endpoints under `/api/v1` using JSON responses and L
    `php artisan migrate --seed`
 5. Start the app:
    `php artisan serve`
+
+### Demo accounts
+
+> **Development only.** These credentials are published here, so any
+> deployment that contains them is compromised. Never run
+> `DemoAccountSeeder` against a production database; the seeder itself refuses
+> to run when `APP_ENV=production`, and the passwords below must never be
+> reused for real accounts. Change or delete every demo account before any
+> environment is exposed to the internet.
+
+`php artisan db:seed --class=DemoAccountSeeder` (also part of `db:seed`)
+creates one account per role:
+
+| Role        | Email                  | Password             |
+| ----------- | ---------------------- | -------------------- |
+| Super Admin | `superadmin@mori.demo` | `MoriSuperAdmin123!` |
+| Admin       | `admin@mori.demo`      | `MoriAdmin123!`      |
+| Staff       | `staff@mori.demo`      | `MoriStaff123!`      |
+| Customer    | `customer@mori.demo`   | `MoriCustomer123!`   |
+
+The seeder is safe to re-run: accounts are matched by email, an existing
+account's password is never reset, memberships and the demo customer's
+restrictions (peanuts, shellfish, vegetarian) are upserted rather than
+duplicated.
+
+### Roles
+
+| Role          | Can do                                                            |
+| ------------- | ----------------------------------------------------------------- |
+| `CUSTOMER`    | Storefront, own orders and reservations, own dietary restrictions |
+| `STAFF`       | Operational tasks for a restaurant they are a member of           |
+| `ADMIN`       | Manage a restaurant, its menu, team and settings                  |
+| `SUPER_ADMIN` | Everything above, plus platform accounts and role assignment      |
+
+Public registration always creates a `CUSTOMER`; a `role` sent in the request
+body or form is ignored. Only a Super Admin can change another account's role,
+and the last remaining Super Admin cannot be demoted (or demote themselves).
 
 ## Testing
 

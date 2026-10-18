@@ -38,8 +38,8 @@ test('availability lists every active table with a status', function () {
     $statuses = collect($response->json('data.tables'))->pluck('status', 'label')->all();
 
     expect($statuses)->toMatchArray([
-        'T1' => 'AVAILABLE',
-        'T2' => 'RESERVED',
+        'T1' => 'available',
+        'T2' => 'taken',
     ])->not->toHaveKey('OLD');
 });
 
@@ -51,7 +51,7 @@ test('a table too small for the party is marked unavailable', function () {
 
     $this->getJson("/api/v1/restaurants/tiny-spot/availability?date={$date}&time=18:00&party_size=6")
         ->assertOk()
-        ->assertJsonPath('data.tables.0.status', 'UNAVAILABLE')
+        ->assertJsonPath('data.tables.0.status', 'unavailable')
         ->assertJsonPath('meta.available_count', 0);
 });
 

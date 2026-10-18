@@ -1,5 +1,9 @@
 import { computed, ref, watch } from 'vue';
-import type { CartLine, MenuItem } from '@/types/restaurant';
+import type {
+    CartLine,
+    MenuItem,
+    SelectedMenuCustomization,
+} from '@/types/restaurant';
 
 const STORAGE_KEY = 'mori.cart';
 
@@ -52,14 +56,43 @@ export function useCart() {
 
     const subtotal = computed(() =>
         lines.value.reduce(
-            (total, line) => total + Number.parseFloat(line.price) * line.quantity,
+            (total, line) =>
+                total + Number.parseFloat(line.price) * line.quantity,
             0,
         ),
     );
 
-    function add(item: MenuItem, quantity = 1, note = ''): void {
+    function lineKey(line: CartLine): string {
+        const optionKey = (line.selectedOptions ?? [])
+            .map(
+                (group) =>
+                    `${group.groupId}:${group.options.map((option) => option.id).join(',')}`,
+            )
+            .join('|');
+
+        return `${line.menuItemId}:${optionKey}`;
+    }
+
+    function add(
+        item: MenuItem,
+        quantity = 1,
+        note = '',
+        selectedOptions: SelectedMenuCustomization[] = [],
+    ): void {
+        const customizationPrice = selectedOptions
+            .flatMap((group) => group.options)
+            .reduce((total, option) => total + Number(option.price), 0);
+        const incomingLine: CartLine = {
+            menuItemId: item.id,
+            name: item.name,
+            price: (Number(item.price) + customizationPrice).toFixed(2),
+            quantity: Math.min(quantity, 99),
+            note,
+            imageUrl: item.image_url,
+            selectedOptions,
+        };
         const existing = lines.value.find(
-            (line) => line.menuItemId === item.id,
+            (line) => lineKey(line) === lineKey(incomingLine),
         );
 
         if (existing) {
@@ -72,37 +105,25 @@ export function useCart() {
             return;
         }
 
-        lines.value = [
-            ...lines.value,
-            {
-                menuItemId: item.id,
-                name: item.name,
-                price: item.price,
-                quantity: Math.min(quantity, 99),
-                note,
-                imageUrl: item.image_url,
-            },
-        ];
+        lines.value = [...lines.value, incomingLine];
     }
 
-    function setQuantity(menuItemId: number, quantity: number): void {
+    function setQuantity(key: string, quantity: number): void {
         if (quantity <= 0) {
-            remove(menuItemId);
+            remove(key);
 
             return;
         }
 
-        const line = lines.value.find((entry) => entry.menuItemId === menuItemId);
+        const line = lines.value.find((entry) => lineKey(entry) === key);
 
         if (line) {
             line.quantity = Math.min(quantity, 99);
         }
     }
 
-    function remove(menuItemId: number): void {
-        lines.value = lines.value.filter(
-            (line) => line.menuItemId !== menuItemId,
-        );
+    function remove(key: string): void {
+        lines.value = lines.value.filter((line) => lineKey(line) !== key);
     }
 
     function clear(): void {
@@ -117,11 +138,20 @@ export function useCart() {
         menu_item_id: number;
         quantity: number;
         note?: string;
+        customizations?: { group_id: string; option_ids: string[] }[];
     }[] {
         return lines.value.map((line) => ({
             menu_item_id: line.menuItemId,
             quantity: line.quantity,
             ...(line.note ? { note: line.note } : {}),
+            ...(line.selectedOptions?.length
+                ? {
+                      customizations: line.selectedOptions.map((group) => ({
+                          group_id: group.groupId,
+                          option_ids: group.options.map((option) => option.id),
+                      })),
+                  }
+                : {}),
         }));
     }
 
@@ -132,6 +162,7 @@ export function useCart() {
         add,
         setQuantity,
         remove,
+        lineKey,
         clear,
         toOrderItems,
     };

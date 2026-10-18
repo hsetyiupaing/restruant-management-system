@@ -19,7 +19,20 @@ test('users can authenticate using the login screen', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    // A plain customer lands in the storefront; only administrators are sent
+    // to the back office.
+    $response->assertRedirect('/orders');
+});
+
+test('an administrator is redirected to the back office after login', function () {
+    $user = User::factory()->admin()->create();
+
+    $this->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+    ])->assertRedirect('/admin');
+
+    $this->assertAuthenticatedAs($user);
 });
 
 test('users with two factor enabled are redirected to two factor challenge', function () {

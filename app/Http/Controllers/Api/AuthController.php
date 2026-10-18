@@ -6,9 +6,11 @@ use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\LoginRequest;
 use App\Http\Requests\Api\Auth\RegisterRequest;
+use App\Http\Requests\Api\Auth\UpdateFoodRestrictionsRequest;
 use App\Http\Requests\Api\Auth\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\FoodRestrictionService;
 use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,18 +28,23 @@ class AuthController extends Controller
     /**
      * Create a new customer account and start an authenticated session for it.
      */
-    public function register(RegisterRequest $request): JsonResponse
+    public function register(RegisterRequest $request, FoodRestrictionService $restrictions): JsonResponse
     {
         // Public registration always creates a CUSTOMER; role escalation is not
         // possible through this endpoint.
         $user = User::query()->create([
-            ...$request->safe()->except(['password_confirmation']),
+            ...$request->safe()->except(['password_confirmation', 'food_restrictions']),
             'role' => UserRole::Customer,
         ]);
 
+        $restrictions->replaceFor(
+            $user,
+            $request->foodRestrictionRows($request->validated('food_restrictions') ?? []),
+        );
+
         $this->loginForSession($request, $user);
 
-        return (new UserResource($user->load('memberships.restaurant')))
+        return (new UserResource($user->load(['memberships.restaurant', 'foodRestrictions'])))
             ->response()
             ->setStatusCode(201);
     }
@@ -95,18 +102,18 @@ class AuthController extends Controller
     public function me(Request $request): UserResource
     {
         return new UserResource(
-            $request->user()->load('memberships.restaurant'),
+            $request->user()->load(['memberships.restaurant', 'foodRestrictions']),
         );
     }
 
     /**
      * Update the signed-in user's profile and clear email verification if the address changes.
      */
-    public function updateProfile(UpdateProfileRequest $request): UserResource
+    public function updateProfile(UpdateProfileRequest $request, FoodRestrictionService $restrictions): UserResource
     {
         $user = $request->user();
 
-        $user->fill($request->validated());
+        $user->fill($request->safe()->except('food_restrictions'));
 
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;
@@ -114,7 +121,34 @@ class AuthController extends Controller
 
         $user->save();
 
-        return new UserResource($user->load('memberships.restaurant'));
+        if ($request->has('food_restrictions')) {
+            $restrictions->replaceFor(
+                $user,
+                $request->foodRestrictionRows($request->validated('food_restrictions') ?? []),
+            );
+        }
+
+        return new UserResource($user->load(['memberships.restaurant', 'foodRestrictions']));
+    }
+
+    /**
+     * Replace the signed-in customer's saved food restrictions.
+     *
+     * A separate endpoint from the profile so the restriction form never has
+     * to re-send (and therefore re-validate) the display name and email.
+     */
+    public function updateFoodRestrictions(
+        UpdateFoodRestrictionsRequest $request,
+        FoodRestrictionService $restrictions,
+    ): UserResource {
+        $user = $request->user();
+
+        $restrictions->replaceFor(
+            $user,
+            $request->foodRestrictionRows($request->validated('food_restrictions') ?? []),
+        );
+
+        return new UserResource($user->load(['memberships.restaurant', 'foodRestrictions']));
     }
 
     /**

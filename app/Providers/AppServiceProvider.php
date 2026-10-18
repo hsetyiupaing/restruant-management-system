@@ -7,11 +7,13 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Reservation;
 use App\Models\Restaurant;
+use App\Models\User;
 use App\Policies\DeliveryDetailPolicy;
 use App\Policies\OrderPolicy;
 use App\Policies\PaymentPolicy;
 use App\Policies\ReservationPolicy;
 use App\Policies\RestaurantPolicy;
+use App\Policies\UserPolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -49,6 +51,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Reservation::class, ReservationPolicy::class);
         Gate::policy(DeliveryDetail::class, DeliveryDetailPolicy::class);
         Gate::policy(Payment::class, PaymentPolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
     }
 
     /**

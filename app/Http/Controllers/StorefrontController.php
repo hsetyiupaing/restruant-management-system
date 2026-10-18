@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\CategoryResource;
+use App\Http\Resources\DietaryTagResource;
 use App\Http\Resources\MenuItemResource;
 use App\Http\Resources\RestaurantResource;
+use App\Models\DietaryTag;
 use App\Models\Restaurant;
 use App\Support\OpeningHours;
+use App\Support\RestaurantContext;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -30,7 +33,7 @@ class StorefrontController extends Controller
         }
 
         $featured = $restaurant->menuItems()
-            ->with('category')
+            ->with(['category', 'dietaryTags'])
             ->available()
             ->where('is_featured', true)
             ->orderBy('name')
@@ -53,6 +56,7 @@ class StorefrontController extends Controller
             return Inertia::render('Storefront/Menu', [
                 'restaurant' => null,
                 'categories' => [],
+                'dietaryTags' => [],
             ]);
         }
 
@@ -65,24 +69,36 @@ class StorefrontController extends Controller
         return Inertia::render('Storefront/Menu', [
             'restaurant' => (new RestaurantResource($restaurant))->resolve(),
             'categories' => CategoryResource::collection($categories)->resolve(),
+            // The chips filter through the API, but the vocabulary itself is
+            // small and fixed, so it is rendered with the page.
+            'dietaryTags' => DietaryTagResource::collection(
+                DietaryTag::query()->orderBy('name')->get(),
+            )->resolve(),
+        ]);
+    }
+
+    public function dish(string $dish): Response
+    {
+        $restaurant = $this->featuredRestaurant();
+
+        return Inertia::render('Storefront/Dish', [
+            'restaurant' => $restaurant === null
+                ? null
+                : (new RestaurantResource($restaurant))->resolve(),
+            // The page resolves the dish from the public API so it shares one
+            // contract with the menu listing; an unknown slug renders the
+            // page's not-found state rather than a bare error page.
+            'dish' => $dish,
         ]);
     }
 
     /**
-     * The storefront is a single-venue site: prefer the configured slug, then
-     * fall back to any active restaurant so a fresh database still renders.
+     * The storefront is a single-venue site. Shared with the back office so
+     * both sides of the application always show the same restaurant.
      */
     private function featuredRestaurant(): ?Restaurant
     {
-        $slug = config('restaurant.storefront_slug');
-
-        $restaurant = Restaurant::query()
-            ->where('slug', $slug)
-            ->where('is_active', true)
-            ->first();
-
-        return $restaurant
-            ?? Restaurant::query()->where('is_active', true)->orderBy('name')->first();
+        return RestaurantContext::storefrontRestaurant();
     }
 
     /**

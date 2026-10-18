@@ -22,8 +22,10 @@ class DiningTableFactory extends Factory
             'label' => 'T'.fake()->unique()->numerify('##'),
             'capacity' => fake()->randomElement([2, 4, 6, 8]),
             'min_capacity' => 1,
-            'pos_x' => fake()->numberBetween(0, 800),
-            'pos_y' => fake()->numberBetween(0, 600),
+            'pos_x' => fake()->numberBetween(0, 700),
+            'pos_y' => fake()->numberBetween(0, 460),
+            'width' => 90,
+            'height' => 60,
             'shape' => fake()->randomElement(TableShape::cases()),
             'is_active' => true,
         ];

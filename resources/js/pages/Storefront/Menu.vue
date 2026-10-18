@@ -9,11 +9,20 @@ import SectionHeading from '@/components/mori/SectionHeading.vue';
 import { api, errorMessage } from '@/lib/api';
 import { formatMoney } from '@/lib/format';
 import { useCart } from '@/composables/useCart';
-import type { Category, MenuItem, Paginated, Restaurant } from '@/types/restaurant';
+import { dietaryFilters, menuCourses } from '@/types/restaurant';
+import type {
+    Category,
+    DietaryTag,
+    MenuCourse,
+    MenuItem,
+    Paginated,
+    Restaurant,
+} from '@/types/restaurant';
 
 const props = defineProps<{
     restaurant: Restaurant | null;
     categories: Category[];
+    dietaryTags: DietaryTag[];
 }>();
 
 const page = usePage();
@@ -29,21 +38,68 @@ const initialQuery = new URLSearchParams(page.url.split('?')[1] ?? '');
 const filters = reactive({
     search: initialQuery.get('search') ?? '',
     categoryId: initialQuery.get('category_id') ?? '',
+    course: (initialQuery.get('course')?.toUpperCase() ?? '') as
+        | MenuCourse
+        | '',
+    dietary: (initialQuery.get('dietary') ?? '')
+        .split(',')
+        .filter((slug) => slug.length > 0),
     page: 1,
 });
 
 let searchTimer: number | undefined;
 
-const activeCategoryName = computed(() => {
-    if (!filters.categoryId) {
-        return 'All dishes';
+const activeCourseLabel = computed(
+    () =>
+        menuCourses.find((entry) => entry.value === filters.course)?.label ??
+        'All dishes',
+);
+
+/**
+ * Only the three dietary classifications are filters. The vocabulary still
+ * comes from the server, but any other tag is never offered here.
+ */
+const activeDietaryTags = computed(() =>
+    props.dietaryTags.filter((tag) =>
+        dietaryFilters.some((filter) => filter.value === tag.slug),
+    ),
+);
+
+const hasFilters = computed(
+    () =>
+        filters.course !== '' ||
+        filters.dietary.length > 0 ||
+        filters.categoryId !== '' ||
+        filters.search !== '',
+);
+
+/**
+ * Filters mirror into the URL so a reload or a shared link keeps the view.
+ */
+function syncUrl(): void {
+    const params = new URLSearchParams();
+
+    if (filters.categoryId) {
+        params.set('category_id', filters.categoryId);
     }
 
-    return (
-        props.categories.find((c) => String(c.id) === filters.categoryId)?.name ??
-        'All dishes'
-    );
-});
+    if (filters.search) {
+        params.set('search', filters.search);
+    }
+
+    if (filters.course) {
+        params.set('course', filters.course.toLowerCase());
+    }
+
+    if (filters.dietary.length > 0) {
+        params.set('dietary', filters.dietary.join(','));
+    }
+
+    const query = params.toString();
+    const url = `${window.location.pathname}${query ? `?${query}` : ''}`;
+
+    window.history.replaceState({}, '', url);
+}
 
 async function load(): Promise<void> {
     if (!props.restaurant) {
@@ -61,6 +117,11 @@ async function load(): Promise<void> {
                     per_page: 60,
                     category_id: filters.categoryId || undefined,
                     search: filters.search || undefined,
+                    course: filters.course || undefined,
+                    dietary:
+                        filters.dietary.length > 0
+                            ? filters.dietary.join(',')
+                            : undefined,
                     page: filters.page,
                 },
             },
@@ -75,30 +136,32 @@ async function load(): Promise<void> {
     }
 }
 
-/**
- * Filters live in the URL so a reload or a shared link keeps the same view.
- */
-function syncUrl(): void {
-    const params = new URLSearchParams();
-
-    if (filters.categoryId) {
-        params.set('category_id', filters.categoryId);
-    }
-
-    if (filters.search) {
-        params.set('search', filters.search);
-    }
-
-    const query = params.toString();
-    const url = `${window.location.pathname}${query ? `?${query}` : ''}`;
-
-    window.history.replaceState({}, '', url);
+function setCourse(course: MenuCourse | ''): void {
+    filters.course = filters.course === course ? '' : course;
+    filters.page = 1;
+    syncUrl();
+    void load();
 }
 
-/**
- * Typing is debounced so the menu is not refetched on every keystroke;
- * category changes are applied immediately.
- */
+function toggleDietary(slug: string): void {
+    filters.dietary = filters.dietary.includes(slug)
+        ? filters.dietary.filter((entry) => entry !== slug)
+        : [...filters.dietary, slug];
+    filters.page = 1;
+    syncUrl();
+    void load();
+}
+
+function clearFilters(): void {
+    filters.search = '';
+    filters.categoryId = '';
+    filters.course = '';
+    filters.dietary = [];
+    filters.page = 1;
+    syncUrl();
+    void load();
+}
+
 watch(
     () => filters.categoryId,
     () => {
@@ -108,6 +171,9 @@ watch(
     },
 );
 
+/**
+ * Typing is debounced so the menu is not refetched on every keystroke.
+ */
 watch(
     () => filters.search,
     () => {
@@ -130,12 +196,6 @@ onMounted(() => {
         void load();
     }
 });
-
-function clearFilters(): void {
-    filters.search = '';
-    filters.categoryId = '';
-    filters.page = 1;
-}
 </script>
 
 <template>
@@ -157,7 +217,7 @@ function clearFilters(): void {
 
     <div class="mori-container grid gap-8 py-10 lg:grid-cols-[1fr_320px]">
         <div>
-            <div class="flex flex-col gap-4">
+            <div class="space-y-5">
                 <div class="relative">
                     <Search
                         class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-mori-muted"
@@ -200,7 +260,9 @@ function clearFilters(): void {
                                 ? 'border-mori-ink bg-mori-ink text-mori-paper'
                                 : 'border-mori-line text-mori-muted hover:border-mori-ink'
                         "
-                        :aria-pressed="String(category.id) === filters.categoryId"
+                        :aria-pressed="
+                            String(category.id) === filters.categoryId
+                        "
                         @click="filters.categoryId = String(category.id)"
                     >
                         {{ category.name }}
@@ -211,8 +273,99 @@ function clearFilters(): void {
                 </div>
             </div>
 
+            <div
+                class="mt-5 space-y-5 rounded border border-mori-line bg-mori-paper p-5"
+            >
+                <div
+                    class="flex flex-wrap items-center gap-x-3 gap-y-2"
+                    role="group"
+                    aria-label="Filter by course"
+                >
+                    <span
+                        class="w-full text-[11px] tracking-[0.16em] text-mori-muted uppercase sm:w-32"
+                    >
+                        Course
+                    </span>
+                    <button
+                        type="button"
+                        class="rounded-full border px-4 py-1.5 text-sm transition-colors"
+                        :class="
+                            !filters.course
+                                ? 'border-mori-ink bg-mori-ink text-mori-paper'
+                                : 'border-mori-line text-mori-muted hover:border-mori-ink'
+                        "
+                        :aria-pressed="!filters.course"
+                        @click="filters.course && setCourse('')"
+                    >
+                        All
+                    </button>
+                    <button
+                        v-for="course in menuCourses"
+                        :key="course.value"
+                        type="button"
+                        class="rounded-full border px-4 py-1.5 text-sm transition-colors"
+                        :class="
+                            filters.course === course.value
+                                ? 'border-mori-ink bg-mori-ink text-mori-paper'
+                                : 'border-mori-line text-mori-muted hover:border-mori-ink'
+                        "
+                        :aria-pressed="filters.course === course.value"
+                        @click="setCourse(course.value)"
+                    >
+                        {{ course.label }}
+                    </button>
+                </div>
+
+                <div
+                    class="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-mori-line/70 pt-4"
+                    role="group"
+                    aria-label="Filter by dietary requirement"
+                >
+                    <span
+                        class="w-full text-[11px] tracking-[0.16em] text-mori-muted uppercase sm:w-32"
+                    >
+                        Dietary
+                    </span>
+                    <button
+                        v-for="tag in activeDietaryTags"
+                        :key="tag.id"
+                        type="button"
+                        class="rounded-full border px-4 py-1.5 text-sm transition-colors"
+                        :class="
+                            filters.dietary.includes(tag.slug)
+                                ? 'border-mori-sage bg-mori-sage text-white'
+                                : 'border-mori-line text-mori-muted hover:border-mori-sage hover:text-mori-sage'
+                        "
+                        :aria-pressed="filters.dietary.includes(tag.slug)"
+                        :title="tag.description ?? undefined"
+                        @click="toggleDietary(tag.slug)"
+                    >
+                        {{ tag.name }}
+                    </button>
+                </div>
+
+                <p
+                    v-if="hasFilters"
+                    class="flex flex-wrap items-center gap-2 border-t border-mori-line/70 pt-3 text-xs text-mori-muted"
+                >
+                    <span>
+                        Course and dietary filters combine: a dish must match
+                        the course and every selected dietary requirement.
+                    </span>
+                    <button
+                        type="button"
+                        class="inline-flex items-center gap-1 font-medium text-mori-wine underline"
+                        @click="clearFilters"
+                    >
+                        <X class="size-3.5" aria-hidden="true" /> Clear filters
+                    </button>
+                </p>
+            </div>
+
             <div class="mt-6 flex items-center justify-between gap-4">
-                <h2 class="mori-heading text-xl">{{ activeCategoryName }}</h2>
+                <h2 class="mori-heading text-xl">
+                    {{ activeCourseLabel }}
+                </h2>
                 <span class="text-sm text-mori-muted">
                     {{ meta?.total ?? dishes.length }} dishes
                 </span>
@@ -220,7 +373,7 @@ function clearFilters(): void {
 
             <p
                 v-if="error"
-                class="mt-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+                class="mt-4 rounded border border-[#f0c4c4] bg-[#fae9e9] px-4 py-3 text-sm text-[#7a1f1f]"
                 role="alert"
             >
                 {{ error }}
@@ -255,11 +408,19 @@ function clearFilters(): void {
             <EmptyState
                 v-else
                 class="mt-6"
-                title="No dishes match that search"
-                description="Try a different category or clear the search."
+                :title="
+                    hasFilters
+                        ? 'No dishes match these filters'
+                        : 'No dishes on the menu yet'
+                "
+                :description="
+                    hasFilters
+                        ? 'Try a different course, or remove a dietary requirement.'
+                        : 'The kitchen has not published any dishes.'
+                "
             >
                 <button
-                    v-if="filters.search || filters.categoryId"
+                    v-if="hasFilters"
                     type="button"
                     class="inline-flex items-center gap-1 text-sm font-medium text-mori-wine underline"
                     @click="clearFilters"
@@ -314,7 +475,9 @@ function clearFilters(): void {
                 <Link
                     href="/checkout"
                     class="mt-4 inline-flex h-11 w-full items-center justify-center rounded bg-mori-wine text-sm font-medium text-white hover:bg-mori-wine-hover"
-                    :class="itemCount === 0 ? 'pointer-events-none opacity-50' : ''"
+                    :class="
+                        itemCount === 0 ? 'pointer-events-none opacity-50' : ''
+                    "
                 >
                     Go to checkout
                 </Link>

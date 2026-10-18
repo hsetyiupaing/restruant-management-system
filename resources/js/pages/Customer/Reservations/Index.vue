@@ -3,13 +3,14 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import { toast } from 'vue-sonner';
 import AppButton from '@/components/mori/AppButton.vue';
+import FloorPlan from '@/components/storefront/FloorPlan.vue';
 import SectionHeading from '@/components/mori/SectionHeading.vue';
 import StatusBadge from '@/components/mori/StatusBadge.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ApiError, api, errorMessage } from '@/lib/api';
-import { formatDate, formatTime, statusLabel } from '@/lib/format';
+import { formatDate, formatTime } from '@/lib/format';
 import type {
     Availability,
     DiningTable,
@@ -41,9 +42,21 @@ const form = reactive({
 });
 
 const slots = [
-    '11:30', '12:00', '12:30', '13:00', '13:30', '14:00',
-    '17:30', '18:00', '18:30', '19:00', '19:30', '20:00',
-    '20:30', '21:00', '21:30',
+    '11:30',
+    '12:00',
+    '12:30',
+    '13:00',
+    '13:30',
+    '14:00',
+    '17:30',
+    '18:00',
+    '18:30',
+    '19:00',
+    '19:30',
+    '20:00',
+    '20:30',
+    '21:00',
+    '21:30',
 ];
 
 const selectedTable = computed<DiningTable | null>(
@@ -57,11 +70,15 @@ const canBook = computed(
     () =>
         props.restaurant !== null &&
         selectedTable.value !== null &&
-        selectedTable.value.status === 'AVAILABLE' &&
+        selectedTable.value.status === 'available' &&
         !submitting.value,
 );
 
-const upcomingStatuses: ReservationStatus[] = ['PENDING', 'CONFIRMED', 'SEATED'];
+const upcomingStatuses: ReservationStatus[] = [
+    'PENDING',
+    'CONFIRMED',
+    'SEATED',
+];
 
 function todayIso(): string {
     // Reservation times are wall-clock values with no meaningful timezone, so
@@ -78,9 +95,12 @@ async function loadBookings(): Promise<void> {
     bookingsError.value = null;
 
     try {
-        const response = await api.get<Paginated<Reservation>>('/reservations', {
-            query: { per_page: 10 },
-        });
+        const response = await api.get<Paginated<Reservation>>(
+            '/reservations',
+            {
+                query: { per_page: 10 },
+            },
+        );
 
         bookings.value = response.data;
     } catch (caught) {
@@ -129,14 +149,17 @@ async function book(): Promise<void> {
     fieldErrors.value = {};
 
     try {
-        const response = await api.post<{ data: Reservation }>('/reservations', {
-            restaurant_id: props.restaurant.id,
-            table_id: selectedTable.value.id,
-            party_size: form.party_size,
-            // Wall-clock time expressed as UTC so it round-trips unchanged.
-            start_time: `${form.date}T${form.time}:00Z`,
-            special_request: form.special_request.trim() || null,
-        });
+        const response = await api.post<{ data: Reservation }>(
+            '/reservations',
+            {
+                restaurant_id: props.restaurant.id,
+                table_id: selectedTable.value.id,
+                party_size: form.party_size,
+                // Wall-clock time expressed as UTC so it round-trips unchanged.
+                start_time: `${form.date}T${form.time}:00Z`,
+                special_request: form.special_request.trim() || null,
+            },
+        );
 
         bookings.value = [response.data, ...bookings.value];
         form.special_request = '';
@@ -179,27 +202,20 @@ async function cancel(reservation: Reservation): Promise<void> {
     }
 }
 
-function tablePosition(table: DiningTable): Record<string, string> {
-    return {
-        left: `${(table.pos_x / 800) * 100}%`,
-        top: `${(table.pos_y / 600) * 100}%`,
-    };
-}
+const availableCount = computed(
+    () =>
+        availability.value?.tables.filter(
+            (table) => table.status === 'available',
+        ).length ?? 0,
+);
 
-function tableStatus(table: DiningTable): string {
-    return table.status ?? 'AVAILABLE';
-}
-
-function tableClass(table: DiningTable): string {
-    if (table.status === 'OCCUPIED') {
-        return 'bg-mori-ink text-white';
+function selectTable(table: DiningTable): void {
+    if (table.status !== 'available') {
+        return;
     }
 
-    if (table.status === 'RESERVED' || table.status === 'UNAVAILABLE') {
-        return 'bg-mori-cream text-mori-muted';
-    }
-
-    return 'bg-mori-sage/15 text-mori-sage hover:bg-mori-sage/25';
+    selectedTableId.value =
+        selectedTableId.value === table.id ? null : table.id;
 }
 
 watch(
@@ -216,7 +232,7 @@ onMounted(() => {
 <template>
     <Head title="Reserve a table · MORI" />
 
-    <div class="mori-container py-12">
+    <div class="mori-container reserve-page py-12">
         <SectionHeading
             eyebrow="Reservations"
             title="Book a table"
@@ -232,18 +248,21 @@ onMounted(() => {
 
         <div v-else class="mt-8 grid gap-8 lg:grid-cols-[380px_1fr]">
             <div class="space-y-6">
-                <section class="rounded border border-mori-line bg-mori-paper p-5">
+                <section
+                    class="rounded border border-mori-line bg-mori-paper p-5"
+                >
                     <h2 class="text-sm font-semibold text-mori-ink">
                         When are you coming?
                     </h2>
 
                     <div class="mt-4 space-y-4">
                         <div class="space-y-1.5">
-                            <Label for="date">Date</Label>
+                            <Label for="date" class="mori-field-label">Date</Label>
                             <Input
                                 id="date"
                                 v-model="form.date"
                                 type="date"
+                                class="mori-field"
                                 :min="todayIso()"
                                 :aria-invalid="Boolean(errorFor('start_time'))"
                             />
@@ -251,11 +270,13 @@ onMounted(() => {
 
                         <div class="grid grid-cols-2 gap-4">
                             <div class="space-y-1.5">
-                                <Label for="time">Time</Label>
+                                <Label for="time" class="mori-field-label"
+                                    >Time</Label
+                                >
                                 <select
                                     id="time"
                                     v-model="form.time"
-                                    class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                                    class="mori-field"
                                 >
                                     <option
                                         v-for="slot in slots"
@@ -267,23 +288,31 @@ onMounted(() => {
                                 </select>
                             </div>
                             <div class="space-y-1.5">
-                                <Label for="party_size">Guests</Label>
+                                <Label for="party_size" class="mori-field-label"
+                                    >Guests</Label
+                                >
                                 <Input
                                     id="party_size"
                                     v-model.number="form.party_size"
                                     type="number"
                                     min="1"
                                     max="100"
-                                    :aria-invalid="Boolean(errorFor('party_size'))"
+                                    class="mori-field"
+                                    :aria-invalid="
+                                        Boolean(errorFor('party_size'))
+                                    "
                                 />
                             </div>
                         </div>
 
                         <div class="space-y-1.5">
-                            <Label for="special_request">Anything we should know?</Label>
+                            <Label for="special_request" class="mori-field-label"
+                                >Anything we should know?</Label
+                            >
                             <Textarea
                                 id="special_request"
                                 v-model="form.special_request"
+                                class="mori-field"
                                 rows="2"
                                 maxlength="1000"
                                 placeholder="Birthday, allergies, high chair…"
@@ -291,8 +320,10 @@ onMounted(() => {
                         </div>
 
                         <p
-                            v-if="errorFor('start_time') || errorFor('table_id')"
-                            class="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+                            v-if="
+                                errorFor('start_time') || errorFor('table_id')
+                            "
+                            class="rounded border border-[#f0c4c4] bg-[#fae9e9] px-3 py-2 text-sm text-[#7a1f1f]"
                             role="alert"
                         >
                             {{ errorFor('start_time') ?? errorFor('table_id') }}
@@ -301,6 +332,7 @@ onMounted(() => {
                         <AppButton
                             block
                             size="lg"
+                            class="reserve-submit"
                             :loading="submitting"
                             :disabled="!canBook"
                             @click="book"
@@ -315,13 +347,15 @@ onMounted(() => {
                 </section>
 
                 <section class="rounded border border-mori-line bg-mori-paper">
-                    <h2 class="border-b border-mori-line px-5 py-3 text-sm font-semibold text-mori-ink">
+                    <h2
+                        class="border-b border-mori-line px-5 py-3 text-sm font-semibold text-mori-ink"
+                    >
                         Your reservations
                     </h2>
 
                     <p
                         v-if="bookingsError"
-                        class="px-5 py-4 text-sm text-red-800"
+                        class="px-5 py-4 text-sm text-[#7a1f1f]"
                         role="alert"
                     >
                         {{ bookingsError }}
@@ -339,7 +373,10 @@ onMounted(() => {
                         />
                     </div>
 
-                    <ul v-else-if="bookings.length" class="divide-y divide-mori-line/70">
+                    <ul
+                        v-else-if="bookings.length"
+                        class="divide-y divide-mori-line/70"
+                    >
                         <li
                             v-for="reservation in bookings"
                             :key="reservation.id"
@@ -347,21 +384,29 @@ onMounted(() => {
                         >
                             <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <p class="text-sm font-medium text-mori-ink">
-                                        {{ formatDate(reservation.start_time) }} ·
+                                    <p
+                                        class="text-sm font-medium text-mori-ink"
+                                    >
+                                        {{ formatDate(reservation.start_time) }}
+                                        ·
                                         {{ formatTime(reservation.start_time) }}
                                     </p>
                                     <p class="mt-0.5 text-xs text-mori-muted">
                                         {{ reservation.party_size }} guests
                                         <template v-if="reservation.table">
-                                            · table {{ reservation.table.label }}
+                                            · table
+                                            {{ reservation.table.label }}
                                         </template>
                                     </p>
                                 </div>
                                 <StatusBadge :status="reservation.status" />
                             </div>
                             <AppButton
-                                v-if="upcomingStatuses.includes(reservation.status)"
+                                v-if="
+                                    upcomingStatuses.includes(
+                                        reservation.status,
+                                    )
+                                "
                                 variant="ghost"
                                 size="sm"
                                 class="mt-2 px-0"
@@ -384,81 +429,66 @@ onMounted(() => {
                     <h2 class="text-sm font-semibold text-mori-ink">
                         Floor plan
                     </h2>
-                    <ul class="flex flex-wrap gap-3 text-xs text-mori-muted">
-                        <li class="flex items-center gap-1.5">
-                            <span class="size-2.5 rounded-full bg-mori-sage/40" />
-                            Available
+                    <ul class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                        <li class="flex items-center gap-2">
+                            <span class="legend-swatch is-available" />
+                            <span class="legend-label">Available</span>
                         </li>
-                        <li class="flex items-center gap-1.5">
-                            <span class="size-2.5 rounded-full bg-mori-cream ring-1 ring-mori-line" />
-                            Taken
+                        <li class="flex items-center gap-2">
+                            <span class="legend-swatch is-selected" />
+                            <span class="legend-label">Selected</span>
                         </li>
-                        <li class="flex items-center gap-1.5">
-                            <span class="size-2.5 rounded-full bg-mori-ink" />
-                            Seated
+                        <li class="flex items-center gap-2">
+                            <span class="legend-swatch is-taken" />
+                            <span class="legend-label">Taken</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="legend-swatch is-seated" />
+                            <span class="legend-label">Seated</span>
                         </li>
                     </ul>
                 </div>
 
                 <p
                     v-if="availabilityError"
-                    class="mt-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+                    class="mt-4 rounded border border-[#f0c4c4] bg-[#fae9e9] px-3 py-2 text-sm text-[#7a1f1f]"
                     role="alert"
                 >
                     {{ availabilityError }}
                 </p>
 
                 <div
-                    v-else
-                    class="relative mt-4 aspect-[4/3] w-full overflow-hidden rounded border border-mori-line bg-mori-cream/40"
-                    :aria-busy="availabilityLoading"
+                    v-if="availabilityLoading"
+                    class="mt-4 flex aspect-[840/560] w-full items-center justify-center rounded border border-mori-line bg-mori-paper text-sm text-mori-muted"
                 >
-                    <div
-                        v-if="availabilityLoading"
-                        class="flex h-full items-center justify-center text-sm text-mori-muted"
-                    >
-                        Loading floor plan…
-                    </div>
-
-                    <template v-else-if="availability">
-                        <button
-                            v-for="table in availability.tables"
-                            :key="table.id"
-                            type="button"
-                            class="absolute -translate-x-1/2 -translate-y-1/2 border text-xs font-medium transition-colors"
-                            :class="[
-                                tableClass(table),
-                                table.shape === 'ROUND'
-                                    ? 'size-14 rounded-full'
-                                    : table.shape === 'SQUARE'
-                                      ? 'size-14 rounded'
-                                      : 'h-12 w-20 rounded',
-                                selectedTableId === table.id
-                                    ? 'ring-2 ring-mori-wine ring-offset-2'
-                                    : '',
-                                table.status === 'AVAILABLE'
-                                    ? 'cursor-pointer'
-                                    : 'cursor-not-allowed',
-                            ]"
-                            :style="tablePosition(table)"
-                            :disabled="table.status !== 'AVAILABLE'"
-                            :aria-pressed="selectedTableId === table.id"
-                            :aria-label="`Table ${table.label}, seats ${table.capacity}, ${statusLabel(tableStatus(table))}`"
-                            @click="selectedTableId = table.id"
-                        >
-                            {{ table.label }}
-                        </button>
-                    </template>
+                    Loading floor plan…
                 </div>
 
+                <FloorPlan
+                    v-else-if="availability && availability.tables.length > 0"
+                    :tables="availability.tables"
+                    :selected-id="selectedTableId"
+                    @select="selectTable"
+                />
+
                 <p
-                    v-if="availability && !availabilityLoading"
+                    v-if="
+                        availability &&
+                        !availabilityLoading &&
+                        availability.tables.length > 0
+                    "
                     class="mt-3 text-xs text-mori-muted"
                 >
-                    {{ availability.tables.filter((t) => t.status === 'AVAILABLE').length }}
+                    {{ availableCount }}
                     of {{ availability.tables.length }} tables available for
                     {{ form.party_size }} guests at {{ form.time }} on
                     {{ formatDate(availability.start_time) }}.
+                    <span
+                        v-if="selectedTable"
+                        class="font-medium text-mori-ink"
+                    >
+                        Table {{ selectedTable.label }} selected.
+                    </span>
                 </p>
 
                 <p

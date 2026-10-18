@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import AppLogoIcon from '@/components/AppLogoIcon.vue';
-import { home } from '@/routes';
+import BrandLogo from '@/components/mori/BrandLogo.vue';
 
 defineProps<{
     title?: string;
@@ -11,32 +10,46 @@ defineProps<{
 
 <template>
     <div
-        class="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10"
+        class="mori-shell flex min-h-svh flex-col items-center justify-center bg-mori-cream px-5 py-10 sm:px-6 md:py-14"
     >
-        <div class="w-full max-w-sm">
-            <div class="flex flex-col gap-8">
-                <div class="flex flex-col items-center gap-4">
+        <div class="w-full" :class="'max-w-md'">
+            <div class="flex flex-col gap-7">
+                <div class="flex flex-col items-center gap-4 text-center">
                     <Link
-                        :href="home()"
-                        class="flex flex-col items-center gap-2 font-medium"
+                        href="/"
+                        class="shrink-0 focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-mori-wine"
+                        aria-label="MORI home"
                     >
-                        <div
-                            class="mb-1 flex h-9 w-9 items-center justify-center rounded-md"
-                        >
-                            <AppLogoIcon
-                                class="size-9 fill-current text-[var(--foreground)] dark:text-white"
-                            />
-                        </div>
-                        <span class="sr-only">{{ title }}</span>
+                        <BrandLogo />
                     </Link>
-                    <div class="space-y-2 text-center">
-                        <h1 class="text-xl font-medium">{{ title }}</h1>
-                        <p class="text-center text-sm text-muted-foreground">
+                    <div class="space-y-2">
+                        <h1 class="mori-heading text-2xl text-mori-ink">
+                            {{ title }}
+                        </h1>
+                        <p
+                            v-if="description"
+                            class="mx-auto max-w-sm text-sm leading-relaxed text-mori-muted"
+                        >
                             {{ description }}
                         </p>
                     </div>
                 </div>
-                <slot />
+
+                <div
+                    class="rounded border border-mori-line bg-mori-paper p-6 shadow-[0_1px_0_rgba(34,32,29,0.04)] sm:p-7"
+                >
+                    <slot />
+                </div>
+
+                <p class="text-center text-xs text-mori-muted">
+                    <Link
+                        href="/menu"
+                        class="underline underline-offset-4 hover:text-mori-wine focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mori-wine"
+                    >
+                        Browse the menu
+                    </Link>
+                    without an account.
+                </p>
             </div>
         </div>
     </div>

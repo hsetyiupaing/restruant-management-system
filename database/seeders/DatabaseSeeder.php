@@ -20,6 +20,14 @@ class DatabaseSeeder extends Seeder
             return;
         }
 
-        $this->call(DemoDataSeeder::class);
+        $this->call([
+            DietaryTagSeeder::class,
+            DemoDataSeeder::class,
+            ThaiMenuSeeder::class,
+            // The documented @mori.demo accounts. They are seeded after the
+            // menu so the demo customer's restrictions can be compared with a
+            // real dish on a fresh database.
+            DemoAccountSeeder::class,
+        ]);
     }
 }

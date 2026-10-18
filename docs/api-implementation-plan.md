@@ -5,14 +5,14 @@ Source of truth for schema: the files in `database/migrations/`.
 
 ## 1. Repository inspection summary
 
-| Area | Finding |
-|---|---|
-| Framework | Laravel 13.36, PHP 8.5.4 |
-| Existing auth | Laravel Fortify 1.37 (session guard `web`, 2FA, passkeys) with Inertia/Vue starter kit |
-| API layer | **Not installed** at inspection time: no `routes/api.php`, no `api` middleware group, no Sanctum |
-| Database | MySQL 8.4 (`DB_CONNECTION=mysql`); tests run on SQLite `:memory:` per `phpunit.xml` |
-| Timezone | `config('app.timezone')` = UTC; `restaurants` has no timezone column |
-| Policies / services | None existed; only starter-kit settings controllers |
+| Area                | Finding                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------ |
+| Framework           | Laravel 13.36, PHP 8.5.4                                                                         |
+| Existing auth       | Laravel Fortify 1.37 (session guard `web`, 2FA, passkeys) with Inertia/Vue starter kit           |
+| API layer           | **Not installed** at inspection time: no `routes/api.php`, no `api` middleware group, no Sanctum |
+| Database            | MySQL 8.4 (`DB_CONNECTION=mysql`); tests run on SQLite `:memory:` per `phpunit.xml`              |
+| Timezone            | `config('app.timezone')` = UTC; `restaurants` has no timezone column                             |
+| Policies / services | None existed; only starter-kit settings controllers                                              |
 
 ### Installed during this phase
 
@@ -25,21 +25,21 @@ Source of truth for schema: the files in `database/migrations/`.
 
 All tables are InnoDB / `utf8mb4_unicode_ci`.
 
-| Table | Key columns | Enums | Notes |
-|---|---|---|---|
-| `users` | `name`, `email` UK, `password`, `role`, `no_show_count`, 2FA cols, `email_verified_at` | `role`: CUSTOMER, STAFF, ADMIN, SUPER_ADMIN | `name` is the display name; **no `phone` column** |
-| `restaurants` | `name`, `slug` UK, `phone`, `address`, `opening_hours` JSON, `slot_minutes` (90), `auto_confirm_reservations`, `delivery_fee`, `min_delivery_amount`, `tax_rate`, `is_active` | — | Cascades to menu/tables/reservations/members; orders `RESTRICT` |
-| `restaurant_members` | `restaurant_id`, `user_id`, `role`, `staff_type` | `role`: STAFF, ADMIN; `staff_type`: CASHIER, KITCHEN, WAITER, DRIVER (nullable) | UNIQUE `(restaurant_id, user_id)` |
-| `categories` | `restaurant_id`, `name`, `sort_order` | — | Index `(restaurant_id, sort_order)` |
-| `menu_items` | `restaurant_id`, `category_id`, `name`, `description`, `price` 10,2, `image_url`, `is_available`, `is_featured`, `deleted_at` | — | Soft deletes; category FK `RESTRICT` |
-| `dining_tables` | `restaurant_id`, `label`, `capacity`, `min_capacity`, `pos_x`, `pos_y`, `shape`, `is_active` | `shape`: ROUND, SQUARE, RECT | UNIQUE `(restaurant_id, label)`; **floor-plan coordinates exist** |
-| `reservations` | `restaurant_id`, `customer_id`, `table_id`, `party_size`, `start_time`, `end_time`, `status`, `special_request`, `hold_expires_at` | `status`: PENDING, CONFIRMED, SEATED, COMPLETED, CANCELLED, NO_SHOW, EXPIRED | Index `(table_id, start_time, end_time)` |
-| `orders` | `restaurant_id`, `customer_id`, `reservation_id` (nullable), `order_number` UK, `order_type`, `status`, `payment_status`, `subtotal`, `delivery_fee`, `tax`, `discount`, `total`, `scheduled_for`, `customer_note` | `order_type`: PICKUP, DELIVERY; `status`: PLACED, CONFIRMED, PREPARING, READY, OUT_FOR_DELIVERY, COMPLETED, CANCELLED, REJECTED, DELIVERY_FAILED, REFUNDED; `payment_status`: UNPAID, PAID, FAILED, REFUNDED | Index `(restaurant_id, status, created_at)` |
-| `order_items` | `order_id`, `menu_item_id` (nullable), `item_name_snapshot`, `unit_price`, `quantity`, `line_total`, `note` | — | `menu_item_id` nulls on delete |
-| `delivery_details` | `order_id` UK, `driver_id` (nullable), recipient name/phone/address, `latitude`, `longitude`, `delivery_status`, `assigned_at`, `picked_up_at`, `delivered_at`, `failure_reason` | `delivery_status`: UNASSIGNED, ASSIGNED, PICKED_UP, DELIVERED, FAILED | 1:0..1 with orders |
-| `payments` | `order_id`, `method`, `amount`, `status`, `provider_ref`, `paid_at` | `method`: CASH, CARD, ONLINE; `status`: UNPAID, PAID, FAILED, REFUNDED | Order delete `RESTRICT` |
-| `order_status_history` | `order_id`, `from_status`, `to_status`, `changed_by`, `changed_at`, `reason` | — | `from_status` nullable for initial row |
-| `reservation_status_history` | `reservation_id`, `from_status`, `to_status`, `changed_by`, `changed_at` | — | No `reason` column |
+| Table                        | Key columns                                                                                                                                                                                                        | Enums                                                                                                                                                                                                        | Notes                                                             |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| `users`                      | `name`, `email` UK, `password`, `role`, `no_show_count`, 2FA cols, `email_verified_at`                                                                                                                             | `role`: CUSTOMER, STAFF, ADMIN, SUPER_ADMIN                                                                                                                                                                  | `name` is the display name; **no `phone` column**                 |
+| `restaurants`                | `name`, `slug` UK, `phone`, `address`, `opening_hours` JSON, `slot_minutes` (90), `auto_confirm_reservations`, `delivery_fee`, `min_delivery_amount`, `tax_rate`, `is_active`                                      | —                                                                                                                                                                                                            | Cascades to menu/tables/reservations/members; orders `RESTRICT`   |
+| `restaurant_members`         | `restaurant_id`, `user_id`, `role`, `staff_type`                                                                                                                                                                   | `role`: STAFF, ADMIN; `staff_type`: CASHIER, KITCHEN, WAITER, DRIVER (nullable)                                                                                                                              | UNIQUE `(restaurant_id, user_id)`                                 |
+| `categories`                 | `restaurant_id`, `name`, `sort_order`                                                                                                                                                                              | —                                                                                                                                                                                                            | Index `(restaurant_id, sort_order)`                               |
+| `menu_items`                 | `restaurant_id`, `category_id`, `name`, `description`, `price` 10,2, `image_url`, `is_available`, `is_featured`, `deleted_at`                                                                                      | —                                                                                                                                                                                                            | Soft deletes; category FK `RESTRICT`                              |
+| `dining_tables`              | `restaurant_id`, `label`, `capacity`, `min_capacity`, `pos_x`, `pos_y`, `shape`, `is_active`                                                                                                                       | `shape`: ROUND, SQUARE, RECT                                                                                                                                                                                 | UNIQUE `(restaurant_id, label)`; **floor-plan coordinates exist** |
+| `reservations`               | `restaurant_id`, `customer_id`, `table_id`, `party_size`, `start_time`, `end_time`, `status`, `special_request`, `hold_expires_at`                                                                                 | `status`: PENDING, CONFIRMED, SEATED, COMPLETED, CANCELLED, NO_SHOW, EXPIRED                                                                                                                                 | Index `(table_id, start_time, end_time)`                          |
+| `orders`                     | `restaurant_id`, `customer_id`, `reservation_id` (nullable), `order_number` UK, `order_type`, `status`, `payment_status`, `subtotal`, `delivery_fee`, `tax`, `discount`, `total`, `scheduled_for`, `customer_note` | `order_type`: PICKUP, DELIVERY; `status`: PLACED, CONFIRMED, PREPARING, READY, OUT_FOR_DELIVERY, COMPLETED, CANCELLED, REJECTED, DELIVERY_FAILED, REFUNDED; `payment_status`: UNPAID, PAID, FAILED, REFUNDED | Index `(restaurant_id, status, created_at)`                       |
+| `order_items`                | `order_id`, `menu_item_id` (nullable), `item_name_snapshot`, `unit_price`, `quantity`, `line_total`, `note`                                                                                                        | —                                                                                                                                                                                                            | `menu_item_id` nulls on delete                                    |
+| `delivery_details`           | `order_id` UK, `driver_id` (nullable), recipient name/phone/address, `latitude`, `longitude`, `delivery_status`, `assigned_at`, `picked_up_at`, `delivered_at`, `failure_reason`                                   | `delivery_status`: UNASSIGNED, ASSIGNED, PICKED_UP, DELIVERED, FAILED                                                                                                                                        | 1:0..1 with orders                                                |
+| `payments`                   | `order_id`, `method`, `amount`, `status`, `provider_ref`, `paid_at`                                                                                                                                                | `method`: CASH, CARD, ONLINE; `status`: UNPAID, PAID, FAILED, REFUNDED                                                                                                                                       | Order delete `RESTRICT`                                           |
+| `order_status_history`       | `order_id`, `from_status`, `to_status`, `changed_by`, `changed_at`, `reason`                                                                                                                                       | —                                                                                                                                                                                                            | `from_status` nullable for initial row                            |
+| `reservation_status_history` | `reservation_id`, `from_status`, `to_status`, `changed_by`, `changed_at`                                                                                                                                           | —                                                                                                                                                                                                            | No `reason` column                                                |
 
 ## 3. Authentication decision
 
@@ -59,13 +59,13 @@ Fortify `web` guard, session driver, and `User` model.
 
 ## 4. Authorization model
 
-| Actor | Ability |
-|---|---|
-| Guest | Active restaurants and their **available, non-soft-deleted** menu items only |
-| Customer | Own orders/reservations only (policy checks ownership); place orders; cancel own `PLACED` order; cancel own reservation before the cutoff |
-| Staff (membership) | Operational access to their restaurant only: order queue, status transitions (forward-only), reservations, deliveries, payment records |
-| Restaurant admin (`restaurant_members.role = ADMIN`, or `users.role = ADMIN` with membership) | Everything staff can, plus menu/category/table CRUD, members, status correction (cancel after PREPARING), refunds |
-| Super admin (`users.role = SUPER_ADMIN`) | Create restaurants, activate/deactivate, manage any restaurant |
+| Actor                                                                                         | Ability                                                                                                                                   |
+| --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Guest                                                                                         | Active restaurants and their **available, non-soft-deleted** menu items only                                                              |
+| Customer                                                                                      | Own orders/reservations only (policy checks ownership); place orders; cancel own `PLACED` order; cancel own reservation before the cutoff |
+| Staff (membership)                                                                            | Operational access to their restaurant only: order queue, status transitions (forward-only), reservations, deliveries, payment records    |
+| Restaurant admin (`restaurant_members.role = ADMIN`, or `users.role = ADMIN` with membership) | Everything staff can, plus menu/category/table CRUD, members, status correction (cancel after PREPARING), refunds                         |
+| Super admin (`users.role = SUPER_ADMIN`)                                                      | Create restaurants, activate/deactivate, manage any restaurant                                                                            |
 
 Every nested admin route is scoped through the restaurant in the URL
 (`/admin/restaurants/{restaurant}/orders/{order}` resolves the order **inside** that
@@ -122,16 +122,16 @@ See [api-spec.md](api-spec.md) for fields, examples and error format.
 
 ### Order status transitions
 
-| From | Staff may move to | Restaurant admin may also |
-|---|---|---|
-| PLACED | CONFIRMED, REJECTED, CANCELLED | — |
-| CONFIRMED | PREPARING | CANCELLED |
-| PREPARING | READY | CANCELLED |
-| READY | COMPLETED (pickup), OUT_FOR_DELIVERY (delivery) | CANCELLED |
-| OUT_FOR_DELIVERY | COMPLETED, DELIVERY_FAILED | CANCELLED |
-| DELIVERY_FAILED | OUT_FOR_DELIVERY | CANCELLED |
-| COMPLETED | — | REFUNDED |
-| CANCELLED, REJECTED, REFUNDED | terminal | — |
+| From                          | Staff may move to                               | Restaurant admin may also |
+| ----------------------------- | ----------------------------------------------- | ------------------------- |
+| PLACED                        | CONFIRMED, REJECTED, CANCELLED                  | —                         |
+| CONFIRMED                     | PREPARING                                       | CANCELLED                 |
+| PREPARING                     | READY                                           | CANCELLED                 |
+| READY                         | COMPLETED (pickup), OUT_FOR_DELIVERY (delivery) | CANCELLED                 |
+| OUT_FOR_DELIVERY              | COMPLETED, DELIVERY_FAILED                      | CANCELLED                 |
+| DELIVERY_FAILED               | OUT_FOR_DELIVERY                                | CANCELLED                 |
+| COMPLETED                     | —                                               | REFUNDED                  |
+| CANCELLED, REJECTED, REFUNDED | terminal                                        | —                         |
 
 Customers may only move `PLACED → CANCELLED` on their own orders.
 
@@ -194,15 +194,15 @@ php artisan db:seed --class=DemoDataSeeder   # idempotent; run twice, counts unc
 
 API coverage lives in `tests/Feature/Api/`:
 
-| File | Covers |
-|---|---|
-| `AuthTest.php` | guest 401s, register (incl. role-escalation attempt), login/logout, profile ownership |
-| `PublicMenuTest.php` | inactive restaurant hiding, available-only menu, filters, slug/item cross-checks, pagination |
-| `OrderCheckoutTest.php` | server-side pricing, delivery fee/minimum, foreign/unavailable items, quantities, idempotency, ownership, cancellation |
-| `RestaurantAuthorizationTest.php` | membership gate, staff vs admin, cross-restaurant 404s, category restrict, soft delete, table deactivation, platform-only actions |
-| `ReservationTest.php` | availability map, overlap and back-to-back slots, lead time, opening hours, capacity, cancel cutoff, transitions, no-show counting |
-| `AdminOrderPaymentTest.php` | order lifecycle + history, illegal transitions, admin-only transitions, payment cap, failed/refund semantics, delivery→order sync, driver eligibility |
-| `KpiTest.php` | scoping, revenue exclusion rules, date range/series, staff denial |
+| File                              | Covers                                                                                                                                                |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AuthTest.php`                    | guest 401s, register (incl. role-escalation attempt), login/logout, profile ownership                                                                 |
+| `PublicMenuTest.php`              | inactive restaurant hiding, available-only menu, filters, slug/item cross-checks, pagination                                                          |
+| `OrderCheckoutTest.php`           | server-side pricing, delivery fee/minimum, foreign/unavailable items, quantities, idempotency, ownership, cancellation                                |
+| `RestaurantAuthorizationTest.php` | membership gate, staff vs admin, cross-restaurant 404s, category restrict, soft delete, table deactivation, platform-only actions                     |
+| `ReservationTest.php`             | availability map, overlap and back-to-back slots, lead time, opening hours, capacity, cancel cutoff, transitions, no-show counting                    |
+| `AdminOrderPaymentTest.php`       | order lifecycle + history, illegal transitions, admin-only transitions, payment cap, failed/refund semantics, delivery→order sync, driver eligibility |
+| `KpiTest.php`                     | scoping, revenue exclusion rules, date range/series, staff denial                                                                                     |
 
 Not exercised automatically: concurrent double-booking under real parallel load (the SQLite
 in-memory test client is single-connection — the row lock is verified by inspection, not by a

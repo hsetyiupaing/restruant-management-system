@@ -5,6 +5,7 @@ import {
     CalendarDays,
     LayoutDashboard,
     Settings,
+    ShieldCheck,
     ShoppingBag,
     UtensilsCrossed,
     Users,
@@ -18,7 +19,11 @@ const restaurant = computed(
     () => page.props.restaurantContext as RestaurantContext | null,
 );
 
-const items = [
+const isSuperAdmin = computed(
+    () => page.props.auth?.user?.role === 'SUPER_ADMIN',
+);
+
+const items = computed(() => [
     { title: 'Overview', href: '/admin', icon: LayoutDashboard, exact: true },
     { title: 'Orders', href: '/admin/orders', icon: ShoppingBag, exact: false },
     {
@@ -29,8 +34,24 @@ const items = [
     },
     { title: 'Menu', href: '/admin/menu', icon: UtensilsCrossed, exact: false },
     { title: 'Customers', href: '/admin/customers', icon: Users, exact: false },
-    { title: 'Settings', href: '/admin/settings', icon: Settings, exact: false },
-];
+    // Platform-wide, so it is only shown to accounts that may use it.
+    ...(isSuperAdmin.value
+        ? [
+              {
+                  title: 'Accounts',
+                  href: '/admin/users',
+                  icon: ShieldCheck,
+                  exact: false,
+              },
+          ]
+        : []),
+    {
+        title: 'Settings',
+        href: '/admin/settings',
+        icon: Settings,
+        exact: false,
+    },
+]);
 
 function isActive(href: string, exact: boolean): boolean {
     const path = page.url.split('?')[0];
@@ -40,10 +61,18 @@ function isActive(href: string, exact: boolean): boolean {
 </script>
 
 <template>
-    <aside class="admin-sidebar hidden shrink-0 flex-col md:flex">
-        <div class="border-b border-white/10 px-5 py-5">
+    <!--
+        White on burgundy is 12.61:1; the inactive links use `text-white/75`,
+        which composites to 7.73:1 — well over AA, unlike the previous 50%.
+    -->
+    <aside
+        class="admin-sidebar sticky top-0 hidden h-screen shrink-0 flex-col md:flex"
+    >
+        <div class="border-b border-white/15 px-5 py-5">
             <BrandLogo inverse compact />
-            <p class="mt-2 text-[11px] tracking-[0.16em] text-white/50 uppercase">
+            <p
+                class="mt-2 text-[11px] tracking-[0.16em] text-white/75 uppercase"
+            >
                 {{ restaurant?.name ?? 'Back office' }}
             </p>
         </div>
@@ -56,8 +85,8 @@ function isActive(href: string, exact: boolean): boolean {
                 class="flex items-center gap-3 rounded px-3 py-2.5 text-sm transition-colors"
                 :class="
                     isActive(item.href, item.exact)
-                        ? 'bg-white/10 font-medium text-white'
-                        : 'text-white/70 hover:bg-white/5 hover:text-white'
+                        ? 'bg-white/15 font-medium text-white shadow-[inset_3px_0_0_var(--mori-brass)]'
+                        : 'text-white/75 hover:bg-white/10 hover:text-white'
                 "
                 :aria-current="
                     isActive(item.href, item.exact) ? 'page' : undefined
@@ -68,10 +97,10 @@ function isActive(href: string, exact: boolean): boolean {
             </Link>
         </nav>
 
-        <div class="border-t border-white/10 p-3">
+        <div class="border-t border-white/15 p-3">
             <Link
                 href="/"
-                class="flex items-center gap-3 rounded px-3 py-2.5 text-sm text-white/60 hover:bg-white/5 hover:text-white"
+                class="flex items-center gap-3 rounded px-3 py-2.5 text-sm text-white/75 hover:bg-white/10 hover:text-white"
             >
                 View storefront
             </Link>

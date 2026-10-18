@@ -10,6 +10,8 @@ use App\Models\Reservation;
 use App\Models\Restaurant;
 use App\Models\RestaurantMember;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 test('non-members cannot reach restaurant administration endpoints', function () {
     $restaurant = Restaurant::factory()->create();
@@ -36,6 +38,50 @@ test('staff members cannot manage the menu or members', function () {
     $this->actingAs($staff)
         ->getJson("/api/v1/admin/restaurants/{$restaurant->id}/members")
         ->assertForbidden();
+
+    $this->actingAs($staff)
+        ->post("/api/v1/admin/restaurants/{$restaurant->id}/menu-items/image", [
+            'image' => UploadedFile::fake()->createWithContent(
+                'dish.png',
+                base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/yRoAAAAASUVORK5CYII=') ?: '',
+            ),
+        ], ['Accept' => 'application/json'])
+        ->assertForbidden();
+});
+
+test('restaurant admins can upload menu images to public storage', function () {
+    Storage::fake('public');
+
+    $restaurant = Restaurant::factory()->create();
+    $admin = User::factory()->create();
+    RestaurantMember::factory()->for($restaurant)->for($admin)->admin()->create();
+
+    $response = $this->actingAs($admin)
+        ->post("/api/v1/admin/restaurants/{$restaurant->id}/menu-items/image", [
+            'image' => UploadedFile::fake()->createWithContent(
+                'dish.png',
+                base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/yRoAAAAASUVORK5CYII=') ?: '',
+            ),
+        ], ['Accept' => 'application/json'])
+        ->assertCreated();
+
+    expect($response->json('image_url'))
+        ->toContain("/storage/restaurants/{$restaurant->id}/menu/")
+        ->and(Storage::disk('public')->allFiles("restaurants/{$restaurant->id}/menu"))
+        ->toHaveCount(1);
+});
+
+test('menu image uploads reject files that are not supported images', function () {
+    $restaurant = Restaurant::factory()->create();
+    $admin = User::factory()->create();
+    RestaurantMember::factory()->for($restaurant)->for($admin)->admin()->create();
+
+    $this->actingAs($admin)
+        ->post("/api/v1/admin/restaurants/{$restaurant->id}/menu-items/image", [
+            'image' => UploadedFile::fake()->create('dish.txt', 5, 'text/plain'),
+        ], ['Accept' => 'application/json'])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('image');
 });
 
 test('restaurant admins can create categories and menu items scoped to their restaurant', function () {
@@ -57,6 +103,54 @@ test('restaurant admins can create categories and menu items scoped to their res
         ->assertCreated()
         ->assertJsonPath('data.restaurant_id', $restaurant->id)
         ->assertJsonPath('data.category.name', 'Starters');
+});
+
+test('restaurant admins can save menu customization groups', function () {
+    $restaurant = Restaurant::factory()->create();
+    $category = Category::factory()->for($restaurant)->create();
+    $admin = User::factory()->create();
+    RestaurantMember::factory()->for($restaurant)->for($admin)->admin()->create();
+
+    $this->actingAs($admin)
+        ->postJson("/api/v1/admin/restaurants/{$restaurant->id}/menu-items", [
+            'category_id' => $category->id,
+            'name' => 'Custom Noodles',
+            'price' => 12,
+            'customization_groups' => [[
+                'id' => 'heat',
+                'name' => 'Spice level',
+                'type' => 'radio',
+                'options' => [
+                    ['id' => 'mild', 'name' => 'Mild', 'price' => 0],
+                    ['id' => 'hot', 'name' => 'Hot', 'price' => 1.5],
+                ],
+            ]],
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.customization_groups.0.type', 'radio')
+        ->assertJsonPath('data.customization_groups.0.options.1.name', 'Hot');
+});
+
+test('menu customization groups reject unsupported selection modes', function () {
+    $restaurant = Restaurant::factory()->create();
+    $category = Category::factory()->for($restaurant)->create();
+    $admin = User::factory()->create();
+    RestaurantMember::factory()->for($restaurant)->for($admin)->admin()->create();
+
+    $this->actingAs($admin)
+        ->postJson("/api/v1/admin/restaurants/{$restaurant->id}/menu-items", [
+            'category_id' => $category->id,
+            'name' => 'Custom Noodles',
+            'price' => 12,
+            'customization_groups' => [[
+                'id' => 'heat',
+                'name' => 'Spice level',
+                'type' => 'dropdown',
+                'options' => [['id' => 'mild', 'name' => 'Mild', 'price' => 0]],
+            ]],
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('customization_groups.0.type');
 });
 
 test('a menu item cannot be assigned to another restaurant category', function () {

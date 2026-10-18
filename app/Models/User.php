@@ -21,6 +21,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property int $id
  * @property string $name
  * @property string $email
+ * @property string|null $phone
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property UserRole $role
@@ -32,7 +33,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'role', 'no_show_count'])]
+#[Fillable(['name', 'email', 'phone', 'password', 'role', 'no_show_count'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
@@ -77,6 +78,16 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class, 'customer_id');
+    }
+
+    /**
+     * Allergies, dietary restrictions and preferences the customer saved.
+     *
+     * @return HasMany<CustomerFoodRestriction, $this>
+     */
+    public function foodRestrictions(): HasMany
+    {
+        return $this->hasMany(CustomerFoodRestriction::class);
     }
 
     public function isCustomer(): bool

@@ -15,9 +15,7 @@ defineProps<{
             >
                 {{ eyebrow }}
             </p>
-            <h2
-                class="mori-heading mt-2 text-3xl text-mori-ink sm:text-4xl"
-            >
+            <h2 class="mori-heading mt-2 text-3xl text-mori-ink sm:text-4xl">
                 {{ title }}
             </h2>
             <p v-if="text" class="mt-3 text-sm text-mori-muted sm:text-base">

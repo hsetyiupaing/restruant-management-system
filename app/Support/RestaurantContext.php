@@ -16,7 +16,7 @@ use App\Models\User;
 class RestaurantContext
 {
     /**
-     * First restaurant the user administers, or any active restaurant for a
+     * First restaurant the user administers, or the storefront restaurant for a
      * platform administrator. Null means the user cannot open the back office.
      */
     public static function forUser(?User $user): ?Restaurant
@@ -40,7 +40,22 @@ class RestaurantContext
             return null;
         }
 
-        return Restaurant::query()->where('is_active', true)->orderBy('name')->first()
+        return self::storefrontRestaurant();
+    }
+
+    /**
+     * The venue the customer storefront serves. A platform administrator has no
+     * membership of their own, so the back office must default to this same
+     * restaurant — otherwise the admin menu and the customer menu show
+     * different venues on the same site.
+     */
+    public static function storefrontRestaurant(): ?Restaurant
+    {
+        return Restaurant::query()
+            ->where('slug', config('restaurant.storefront_slug'))
+            ->where('is_active', true)
+            ->first()
+            ?? Restaurant::query()->where('is_active', true)->orderBy('name')->first()
             ?? Restaurant::query()->orderBy('name')->first();
     }
 

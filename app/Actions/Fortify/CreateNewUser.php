@@ -2,32 +2,51 @@
 
 namespace App\Actions\Fortify;
 
+use App\Concerns\FoodRestrictionRules;
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
+use App\Enums\UserRole;
 use App\Models\User;
+use App\Services\FoodRestrictionService;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 
+/**
+ * Creates an account from the web registration form. Like the API endpoint,
+ * this always creates a CUSTOMER: a role posted with the form is never read.
+ */
 class CreateNewUser implements CreatesNewUsers
 {
-    use PasswordValidationRules, ProfileValidationRules;
+    use FoodRestrictionRules, PasswordValidationRules, ProfileValidationRules;
 
     /**
-     * Validate and create a newly registered user.
-     *
-     * @param  array<string, string>  $input
+     * @param  array<string, mixed>  $input
      */
     public function create(array $input): User
     {
-        Validator::make($input, [
+        $validator = Validator::make($input, [
             ...$this->profileRules(),
             'password' => $this->passwordRules(),
-        ])->validate();
+            ...$this->foodRestrictionRules(),
+        ]);
 
-        return User::create([
+        $this->validateFoodRestrictions($validator, $input['food_restrictions'] ?? []);
+
+        $validator->validate();
+
+        $user = User::create([
             'name' => $input['name'],
             'email' => $input['email'],
+            'phone' => $input['phone'] ?? null,
             'password' => $input['password'],
+            'role' => UserRole::Customer,
         ]);
+
+        app(FoodRestrictionService::class)->replaceFor(
+            $user,
+            $this->foodRestrictionRows($input['food_restrictions'] ?? []),
+        );
+
+        return $user;
     }
 }

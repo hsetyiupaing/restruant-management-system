@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
-import { Menu, ShoppingBag, User, X } from '@lucide/vue';
+import { Menu, ShoppingBag, X } from '@lucide/vue';
 import BrandLogo from '@/components/mori/BrandLogo.vue';
+import AccountMenu from '@/components/storefront/AccountMenu.vue';
 import { useCart } from '@/composables/useCart';
 import type { RestaurantContext } from '@/types/inertia';
 
@@ -11,7 +12,11 @@ const { itemCount } = useCart();
 const open = ref(false);
 
 const user = computed(() => page.props.auth?.user ?? null);
-const restaurant = computed(
+/**
+ * Only staff/administrators resolve to a restaurant context, so this doubles
+ * as the guard for the "Back office" link.
+ */
+const backOffice = computed(
     () => page.props.restaurantContext as RestaurantContext | null,
 );
 
@@ -61,6 +66,14 @@ function isActive(href: string, exact: boolean): boolean {
 
             <div class="flex items-center gap-1">
                 <Link
+                    v-if="backOffice"
+                    href="/admin"
+                    class="hidden rounded px-3 py-2 text-sm text-mori-muted transition-colors hover:bg-mori-cream hover:text-mori-ink md:inline-flex"
+                >
+                    Back office
+                </Link>
+
+                <Link
                     href="/checkout"
                     class="relative inline-flex size-10 items-center justify-center rounded text-mori-ink hover:bg-mori-cream"
                     :aria-label="`Cart, ${itemCount} items`"
@@ -74,13 +87,9 @@ function isActive(href: string, exact: boolean): boolean {
                     </span>
                 </Link>
 
-                <Link
-                    :href="user ? '/orders' : '/login'"
-                    class="hidden size-10 items-center justify-center rounded text-mori-ink hover:bg-mori-cream sm:inline-flex"
-                    :aria-label="user ? 'My account' : 'Log in'"
-                >
-                    <User class="size-5" aria-hidden="true" />
-                </Link>
+                <div class="hidden sm:block">
+                    <AccountMenu />
+                </div>
 
                 <button
                     type="button"
@@ -111,21 +120,60 @@ function isActive(href: string, exact: boolean): boolean {
                 >
                     {{ link.title }}
                 </Link>
+                <template v-if="user">
+                    <Link
+                        href="/account/dietary-restrictions"
+                        class="rounded px-2 py-3 text-sm text-mori-ink hover:bg-mori-cream"
+                        @click="open = false"
+                    >
+                        My dietary restrictions
+                    </Link>
+                    <Link
+                        href="/orders"
+                        class="rounded px-2 py-3 text-sm text-mori-ink hover:bg-mori-cream"
+                        @click="open = false"
+                    >
+                        My orders
+                    </Link>
+                    <Link
+                        href="/logout"
+                        method="post"
+                        as="button"
+                        class="rounded px-2 py-3 text-left text-sm text-mori-wine hover:bg-mori-cream"
+                        data-test="storefront-logout-mobile"
+                        @click="open = false"
+                    >
+                        Sign out
+                    </Link>
+                </template>
                 <Link
-                    :href="user ? '/orders' : '/login'"
+                    v-else
+                    href="/login"
                     class="rounded px-2 py-3 text-sm text-mori-ink hover:bg-mori-cream"
                     @click="open = false"
                 >
-                    {{ user ? 'My account' : 'Log in' }}
+                    Log in
+                </Link>
+                <!--
+                    Staff and administrators need a way back to the back office
+                    from the storefront; customers never see it.
+                -->
+                <Link
+                    v-if="backOffice"
+                    href="/admin"
+                    class="rounded px-2 py-3 text-sm text-mori-ink hover:bg-mori-cream"
+                    @click="open = false"
+                >
+                    Back office
                 </Link>
             </nav>
         </div>
 
         <div
-            v-if="restaurant"
+            v-if="backOffice"
             class="border-t border-mori-line bg-mori-cream/60 py-2 text-center text-[11px] tracking-[0.18em] text-mori-muted uppercase"
         >
-            {{ restaurant.name }}
+            {{ backOffice.name }}
         </div>
     </header>
 </template>

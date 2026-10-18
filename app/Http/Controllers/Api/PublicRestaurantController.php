@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\DietaryRequirement;
+use App\Enums\MenuCourse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\AvailabilityRequest;
 use App\Http\Resources\CategoryResource;
+use App\Http\Resources\DietaryTagResource;
 use App\Http\Resources\MenuItemResource;
 use App\Http\Resources\RestaurantResource;
+use App\Models\DietaryTag;
 use App\Models\MenuItem;
 use App\Models\Restaurant;
 use App\Services\ReservationService;
@@ -66,15 +70,34 @@ class PublicRestaurantController extends Controller
     }
 
     /**
+     * The dietary classifications the storefront can filter by. Served from
+     * the table so the admin form and the public chips share one source.
+     */
+    public function dietaryTags(): AnonymousResourceCollection
+    {
+        return DietaryTagResource::collection(
+            DietaryTag::query()->orderBy('name')->get(),
+        );
+    }
+
+    /**
      * Return filtered and paginated menu items for a restaurant's public menu.
+     *
+     * `course` and `dietary` combine with AND: a query for MAIN plus vegan
+     * returns only vegan mains.
      */
     public function menuItems(Request $request, string $slug): AnonymousResourceCollection
     {
         $restaurant = $this->activeRestaurant($slug);
 
+        $course = MenuCourse::tryFrom((string) $request->string('course')->upper());
+        $dietary = $this->requestedDietaryTags($request);
+
         $items = $restaurant->menuItems()
-            ->with('category')
+            ->with(['category', 'dietaryTags'])
             ->available()
+            ->when($course !== null, fn ($query) => $query->ofCourse($course))
+            ->when($dietary !== [], fn ($query) => $query->withAllDietaryTags($dietary))
             ->when($request->filled('category_id'), fn ($query) => $query->where('category_id', $request->integer('category_id')))
             ->when($request->filled('category'), function ($query) use ($request): void {
                 $query->whereHas('category', fn ($inner) => $inner->where('name', $request->string('category')));
@@ -102,7 +125,27 @@ class PublicRestaurantController extends Controller
 
         abort_unless($menuItem->restaurant_id === $restaurant->id && $menuItem->is_available, 404);
 
-        return new MenuItemResource($menuItem->load('category'));
+        return new MenuItemResource($menuItem->load(['category', 'dietaryTags']));
+    }
+
+    /**
+     * Read the dietary filter, accepting either `dietary=vegan,keto` or a
+     * repeated `dietary[]=vegan&dietary[]=keto`. Unknown slugs are dropped so
+     * a stale bookmark returns results instead of an error.
+     *
+     * @return array<int, string>
+     */
+    private function requestedDietaryTags(Request $request): array
+    {
+        $raw = $request->input('dietary', []);
+        $values = is_array($raw) ? $raw : explode(',', (string) $raw);
+
+        return collect($values)
+            ->map(fn (mixed $value): string => strtolower(trim((string) $value)))
+            ->filter(fn (string $value): bool => DietaryRequirement::tryFrom($value) !== null)
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**
@@ -132,7 +175,7 @@ class PublicRestaurantController extends Controller
                 'tables' => $tables->values(),
             ],
             'meta' => [
-                'available_count' => $tables->where('status', 'AVAILABLE')->count(),
+                'available_count' => $tables->where('status', 'available')->count(),
             ],
         ]);
     }

@@ -52,15 +52,15 @@ const isEmpty = computed(() => !props.loading && props.rows.length === 0);
 </script>
 
 <template>
-    <div class="overflow-x-auto rounded border border-mori-line bg-mori-paper">
+    <div class="overflow-x-auto rounded-lg border border-mori-line bg-mori-paper">
         <table class="w-full min-w-[640px] border-collapse text-sm">
             <thead>
-                <tr class="border-b border-mori-line bg-mori-cream/60">
+                <tr class="border-b border-mori-line bg-mori-cream">
                     <th
                         v-for="column in columns"
                         :key="column.key"
                         scope="col"
-                        class="px-4 py-3 text-[11px] font-semibold tracking-[0.14em] text-mori-muted uppercase"
+                        class="px-4 py-2.5 text-[11px] font-semibold tracking-[0.1em] text-mori-muted uppercase"
                         :class="[alignClass(column.align), column.class]"
                     >
                         {{ column.label }}
@@ -71,10 +71,14 @@ const isEmpty = computed(() => !props.loading && props.rows.length === 0);
                 <tr
                     v-for="index in 5"
                     :key="`skeleton-${index}`"
-                    class="border-b border-mori-line/60"
+                    class="border-b border-mori-line"
                 >
-                    <td v-for="column in columns" :key="column.key" class="px-4 py-4">
-                        <Skeleton class="h-4 w-full max-w-40 bg-mori-cream" />
+                    <td
+                        v-for="column in columns"
+                        :key="column.key"
+                        class="px-4 py-4"
+                    >
+                        <Skeleton class="h-4 w-full max-w-40 bg-mori-line/60" />
                     </td>
                 </tr>
             </tbody>
@@ -82,11 +86,11 @@ const isEmpty = computed(() => !props.loading && props.rows.length === 0);
                 <tr
                     v-for="row in rows"
                     :key="keyFor(row)"
-                    class="border-b border-mori-line/60 transition-colors last:border-0"
+                    class="border-b border-mori-line transition-colors last:border-0"
                     :class="[
-                        striped ? 'odd:bg-mori-cream/25' : '',
+                        striped ? 'odd:bg-[#fbf9f4]' : '',
                         $attrs.onRowClick || $attrs.onRow_click
-                            ? 'cursor-pointer hover:bg-mori-cream/60'
+                            ? 'cursor-pointer hover:bg-mori-cream'
                             : '',
                     ]"
                     @click="emit('row-click', row)"

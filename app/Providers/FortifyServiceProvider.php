@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Enums\FoodRestriction;
+use App\Http\Responses\RoleAwareLoginResponse;
+use App\Http\Responses\RoleAwareRegisterResponse;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -11,6 +14,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
+use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
+use Laravel\Fortify\Contracts\RegisterResponse as RegisterResponseContract;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
 
@@ -21,7 +26,8 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(LoginResponseContract::class, RoleAwareLoginResponse::class);
+        $this->app->singleton(RegisterResponseContract::class, RoleAwareRegisterResponse::class);
     }
 
     /**
@@ -69,6 +75,9 @@ class FortifyServiceProvider extends ServiceProvider
 
         Fortify::registerView(fn () => Inertia::render('auth/Register', [
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
+            // The selectable allergy/restriction vocabulary is resolved on the
+            // server so the form cannot offer a value validation would reject.
+            'foodRestrictionCatalog' => FoodRestriction::catalog(),
         ]));
 
         Fortify::twoFactorChallengeView(fn () => Inertia::render('auth/TwoFactorChallenge'));

@@ -16,8 +16,16 @@ const props = defineProps<{
     restaurant: Restaurant | null;
 }>();
 
-const { lines, subtotal, itemCount, setQuantity, remove, clear, toOrderItems } =
-    useCart();
+const {
+    lines,
+    subtotal,
+    itemCount,
+    setQuantity,
+    remove,
+    lineKey,
+    clear,
+    toOrderItems,
+} = useCart();
 
 const orderType = ref<OrderType>('PICKUP');
 const submitting = ref(false);
@@ -56,7 +64,9 @@ const tax = computed(
 );
 
 const total = computed(
-    () => Math.round((subtotal.value + deliveryFee.value + tax.value) * 100) / 100,
+    () =>
+        Math.round((subtotal.value + deliveryFee.value + tax.value) * 100) /
+        100,
 );
 
 const belowMinimum = computed(() => {
@@ -129,7 +139,9 @@ async function placeOrder(): Promise<void> {
     <Head title="Checkout · MORI" />
 
     <div class="mori-container py-12">
-        <h1 class="mori-heading text-3xl text-mori-ink sm:text-4xl">Checkout</h1>
+        <h1 class="mori-heading text-3xl text-mori-ink sm:text-4xl">
+            Checkout
+        </h1>
         <p v-if="restaurant" class="mt-2 text-sm text-mori-muted">
             {{ restaurant.name }}
         </p>
@@ -147,13 +159,15 @@ async function placeOrder(): Promise<void> {
         <div v-else class="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
             <div class="space-y-6">
                 <section class="rounded border border-mori-line bg-mori-paper">
-                    <h2 class="border-b border-mori-line px-5 py-3 text-sm font-semibold text-mori-ink">
+                    <h2
+                        class="border-b border-mori-line px-5 py-3 text-sm font-semibold text-mori-ink"
+                    >
                         Your items
                     </h2>
                     <ul class="divide-y divide-mori-line/70">
                         <li
                             v-for="line in lines"
-                            :key="line.menuItemId"
+                            :key="lineKey(line)"
                             class="flex items-start gap-4 px-5 py-4"
                         >
                             <div class="min-w-0 flex-1">
@@ -166,6 +180,22 @@ async function placeOrder(): Promise<void> {
                                 >
                                     {{ line.note }}
                                 </p>
+                                <ul
+                                    v-if="line.selectedOptions?.length"
+                                    class="mt-1 space-y-0.5 text-xs text-mori-muted"
+                                >
+                                    <li
+                                        v-for="group in line.selectedOptions"
+                                        :key="group.groupId"
+                                    >
+                                        {{ group.groupName }}:
+                                        {{
+                                            group.options
+                                                .map((option) => option.name)
+                                                .join(', ')
+                                        }}
+                                    </li>
+                                </ul>
                                 <p class="mt-0.5 text-xs text-mori-muted">
                                     {{ formatMoney(line.price) }} each
                                 </p>
@@ -180,7 +210,12 @@ async function placeOrder(): Promise<void> {
                                     type="button"
                                     class="inline-flex size-7 items-center justify-center rounded border border-mori-line text-mori-ink hover:bg-mori-cream"
                                     :aria-label="`Remove one ${line.name}`"
-                                    @click="setQuantity(line.menuItemId, line.quantity - 1)"
+                                    @click="
+                                        setQuantity(
+                                            lineKey(line),
+                                            line.quantity - 1,
+                                        )
+                                    "
                                 >
                                     <Minus class="size-3" aria-hidden="true" />
                                 </button>
@@ -192,21 +227,30 @@ async function placeOrder(): Promise<void> {
                                     class="inline-flex size-7 items-center justify-center rounded border border-mori-line text-mori-ink hover:bg-mori-cream disabled:opacity-40"
                                     :disabled="line.quantity >= 99"
                                     :aria-label="`Add one ${line.name}`"
-                                    @click="setQuantity(line.menuItemId, line.quantity + 1)"
+                                    @click="
+                                        setQuantity(
+                                            lineKey(line),
+                                            line.quantity + 1,
+                                        )
+                                    "
                                 >
                                     <Plus class="size-3" aria-hidden="true" />
                                 </button>
                             </div>
 
                             <span class="w-20 text-right text-sm text-mori-ink">
-                                {{ formatMoney(Number(line.price) * line.quantity) }}
+                                {{
+                                    formatMoney(
+                                        Number(line.price) * line.quantity,
+                                    )
+                                }}
                             </span>
 
                             <button
                                 type="button"
                                 class="inline-flex size-7 items-center justify-center rounded text-mori-muted hover:bg-mori-cream hover:text-mori-wine"
                                 :aria-label="`Remove ${line.name} from order`"
-                                @click="remove(line.menuItemId)"
+                                @click="remove(lineKey(line))"
                             >
                                 <Trash2 class="size-4" aria-hidden="true" />
                             </button>
@@ -214,15 +258,25 @@ async function placeOrder(): Promise<void> {
                     </ul>
                 </section>
 
-                <section class="rounded border border-mori-line bg-mori-paper p-5">
+                <section
+                    class="rounded border border-mori-line bg-mori-paper p-5"
+                >
                     <h2 class="text-sm font-semibold text-mori-ink">
                         How would you like it?
                     </h2>
                     <div class="mt-3 grid gap-3 sm:grid-cols-2">
                         <label
                             v-for="option in [
-                                { value: 'PICKUP', title: 'Pickup', text: 'Collect from the counter.' },
-                                { value: 'DELIVERY', title: 'Delivery', text: 'Brought to your door.' },
+                                {
+                                    value: 'PICKUP',
+                                    title: 'Pickup',
+                                    text: 'Collect from the counter.',
+                                },
+                                {
+                                    value: 'DELIVERY',
+                                    title: 'Delivery',
+                                    text: 'Brought to your door.',
+                                },
                             ]"
                             :key="option.value"
                             class="flex cursor-pointer gap-3 rounded border p-4 transition-colors"
@@ -240,7 +294,9 @@ async function placeOrder(): Promise<void> {
                                 class="mt-1"
                             />
                             <span>
-                                <span class="block text-sm font-medium text-mori-ink">
+                                <span
+                                    class="block text-sm font-medium text-mori-ink"
+                                >
                                     {{ option.title }}
                                 </span>
                                 <span class="block text-xs text-mori-muted">
@@ -260,11 +316,13 @@ async function placeOrder(): Promise<void> {
                                 id="recipient_name"
                                 v-model="delivery.recipient_name"
                                 autocomplete="name"
-                                :aria-invalid="Boolean(errorFor('delivery.recipient_name'))"
+                                :aria-invalid="
+                                    Boolean(errorFor('delivery.recipient_name'))
+                                "
                             />
                             <p
                                 v-if="errorFor('delivery.recipient_name')"
-                                class="text-xs text-red-700"
+                                class="text-xs text-[#7a1f1f]"
                             >
                                 {{ errorFor('delivery.recipient_name') }}
                             </p>
@@ -276,11 +334,15 @@ async function placeOrder(): Promise<void> {
                                 v-model="delivery.recipient_phone"
                                 type="tel"
                                 autocomplete="tel"
-                                :aria-invalid="Boolean(errorFor('delivery.recipient_phone'))"
+                                :aria-invalid="
+                                    Boolean(
+                                        errorFor('delivery.recipient_phone'),
+                                    )
+                                "
                             />
                             <p
                                 v-if="errorFor('delivery.recipient_phone')"
-                                class="text-xs text-red-700"
+                                class="text-xs text-[#7a1f1f]"
                             >
                                 {{ errorFor('delivery.recipient_phone') }}
                             </p>
@@ -292,11 +354,13 @@ async function placeOrder(): Promise<void> {
                                 v-model="delivery.address_line"
                                 rows="2"
                                 autocomplete="street-address"
-                                :aria-invalid="Boolean(errorFor('delivery.address_line'))"
+                                :aria-invalid="
+                                    Boolean(errorFor('delivery.address_line'))
+                                "
                             />
                             <p
                                 v-if="errorFor('delivery.address_line')"
-                                class="text-xs text-red-700"
+                                class="text-xs text-[#7a1f1f]"
                             >
                                 {{ errorFor('delivery.address_line') }}
                             </p>
@@ -304,7 +368,9 @@ async function placeOrder(): Promise<void> {
                     </div>
                 </section>
 
-                <section class="rounded border border-mori-line bg-mori-paper p-5">
+                <section
+                    class="rounded border border-mori-line bg-mori-paper p-5"
+                >
                     <Label for="customer_note">Note for the kitchen</Label>
                     <Textarea
                         id="customer_note"
@@ -346,29 +412,37 @@ async function placeOrder(): Promise<void> {
                             class="flex justify-between border-t border-mori-line pt-3 text-base font-semibold"
                         >
                             <dt>Estimated total</dt>
-                            <dd class="font-display">{{ formatMoney(total) }}</dd>
+                            <dd class="font-display">
+                                {{ formatMoney(total) }}
+                            </dd>
                         </div>
                     </dl>
 
                     <p class="mt-2 text-xs text-mori-muted">
-                        Estimate only. The restaurant recomputes every amount when
-                        the order is placed.
+                        Estimate only. The restaurant recomputes every amount
+                        when the order is placed.
                     </p>
 
                     <p
                         v-if="belowMinimum"
-                        class="mt-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+                        class="mt-3 rounded border border-[#e8d3a3] bg-[#fbf0d9] px-3 py-2 text-xs text-[#6b4a12]"
                         role="status"
                     >
                         Delivery orders start at
                         {{ formatMoney(settings?.min_delivery_amount ?? '0') }}.
-                        Add {{ formatMoney((Number(settings?.min_delivery_amount) || 0) - subtotal) }}
+                        Add
+                        {{
+                            formatMoney(
+                                (Number(settings?.min_delivery_amount) || 0) -
+                                    subtotal,
+                            )
+                        }}
                         more, or choose pickup.
                     </p>
 
                     <p
                         v-if="formError"
-                        class="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+                        class="mt-3 rounded border border-[#f0c4c4] bg-[#fae9e9] px-3 py-2 text-sm text-[#7a1f1f]"
                         role="alert"
                     >
                         {{ formError }}

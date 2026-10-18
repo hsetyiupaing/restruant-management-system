@@ -13,7 +13,7 @@ withDefaults(
 
 <template>
     <div
-        class="flex flex-col items-center justify-center rounded border border-dashed border-mori-line bg-mori-cream/40 px-6 py-14 text-center"
+        class="flex flex-col items-center justify-center rounded border border-dashed border-mori-field bg-mori-paper px-6 py-14 text-center"
     >
         <component
             :is="icon"

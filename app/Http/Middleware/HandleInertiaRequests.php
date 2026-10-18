@@ -41,10 +41,43 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                // Saved restrictions travel with every page, so the dish page
+                // can compare them with a dish without another request. Only
+                // the signed-in customer's own rows are serialised.
+                'foodRestrictions' => fn (): array => $this->foodRestrictions($request),
             ],
             'restaurantContext' => fn (): ?array => $this->restaurantContext($request),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+
+    /**
+     * The signed-in customer's saved food restrictions. Guests get an empty
+     * list, never a previously cached customer's data.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function foodRestrictions(Request $request): array
+    {
+        $user = $request->user();
+
+        if ($user === null) {
+            return [];
+        }
+
+        return $user->foodRestrictions()
+            ->orderBy('kind')
+            ->orderBy('restriction')
+            ->get()
+            ->map(fn ($restriction): array => [
+                'restriction' => $restriction->restriction->value,
+                'kind' => $restriction->kind->value,
+                'label' => $restriction->label(),
+                'custom_label' => $restriction->custom_label,
+                'allergen' => $restriction->restriction->allergen()?->value,
+                'dietary_tag' => $restriction->restriction->dietaryTag(),
+            ])
+            ->all();
     }
 
     /**

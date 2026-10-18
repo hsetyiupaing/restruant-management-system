@@ -128,40 +128,45 @@
     --sidebar: hsl(0 0% 98%);
 }
 
+/*
+  The product is painted light: every page, storefront and back office, is
+  built from the warm palette in mori.css. The `.dark` class still exists
+  because `useAppearance()` toggles it, so it is pinned to the same warm
+  tokens rather than shadcn's near-black defaults — otherwise a dark OS
+  preference would drop shadcn surfaces to hsl(0 0% 3.9%) behind our
+  literal-coloured text and make dialogs (which are portalled outside the
+  shell) unreadable.
+*/
 .dark {
-    --background: hsl(0 0% 3.9%);
-    --foreground: hsl(0 0% 98%);
-    --card: hsl(0 0% 3.9%);
-    --card-foreground: hsl(0 0% 98%);
-    --popover: hsl(0 0% 3.9%);
-    --popover-foreground: hsl(0 0% 98%);
-    --primary: hsl(0 0% 98%);
-    --primary-foreground: hsl(0 0% 9%);
-    --secondary: hsl(0 0% 14.9%);
-    --secondary-foreground: hsl(0 0% 98%);
-    --muted: hsl(0 0% 16.08%);
-    --muted-foreground: hsl(0 0% 63.9%);
-    --accent: hsl(0 0% 14.9%);
-    --accent-foreground: hsl(0 0% 98%);
-    --destructive: hsl(0 84% 60%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 14.9%);
-    --input: hsl(0 0% 14.9%);
-    --ring: hsl(0 0% 83.1%);
-    --chart-1: hsl(220 70% 50%);
-    --chart-2: hsl(160 60% 45%);
-    --chart-3: hsl(30 80% 55%);
-    --chart-4: hsl(280 65% 60%);
-    --chart-5: hsl(340 75% 55%);
-    --sidebar-background: hsl(0 0% 7%);
-    --sidebar-foreground: hsl(0 0% 95.9%);
-    --sidebar-primary: hsl(360, 100%, 100%);
+    --background: hsl(40 33% 95.3%);
+    --foreground: hsl(240 3.7% 10.6%);
+    --card: hsl(0 0% 100%);
+    --card-foreground: hsl(240 3.7% 10.6%);
+    --popover: hsl(0 0% 100%);
+    --popover-foreground: hsl(240 3.7% 10.6%);
+    --primary: hsl(349 49% 24%);
+    --primary-foreground: hsl(0 0% 100%);
+    --secondary: hsl(40 33% 92%);
+    --secondary-foreground: hsl(240 3.7% 10.6%);
+    --muted: hsl(40 33% 95.3%);
+    --muted-foreground: hsl(35 8% 42%);
+    --accent: hsl(40 33% 92%);
+    --accent-foreground: hsl(240 3.7% 10.6%);
+    --destructive: hsl(0 50% 35%);
+    --destructive-foreground: hsl(0 0% 100%);
+    --border: hsl(39 31% 86%);
+    --input: hsl(38 9% 51%);
+    --ring: hsl(349 49% 24%);
+    --sidebar-background: hsl(40 33% 95.3%);
+    --sidebar-foreground: hsl(240 3.7% 10.6%);
+    --sidebar-primary: hsl(349 49% 24%);
     --sidebar-primary-foreground: hsl(0 0% 100%);
-    --sidebar-accent: hsl(0 0% 15.9%);
-    --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-    --sidebar-border: hsl(0 0% 15.9%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(240 5.9% 10%);
+    --sidebar-accent: hsl(40 33% 92%);
+    --sidebar-accent-foreground: hsl(240 3.7% 10.6%);
+    --sidebar-border: hsl(39 31% 86%);
+    --sidebar-ring: hsl(349 49% 24%);
+    --sidebar: hsl(40 33% 95.3%);
+    color-scheme: light;
 }
 
 @layer base {
@@ -170,5 +175,26 @@
     }
     body {
         @apply bg-background text-foreground;
+    }
+
+    /*
+      The product is painted light (see the comment at the top of mori.css).
+      Pinning `color-scheme` stops the OS dark preference from rendering native
+      <select>, <input type="date"> and scrollbars dark inside a white card —
+      which is what made control text unreadable in dark mode.
+    */
+    :root {
+        color-scheme: light;
+    }
+
+    /*
+      Placeholders must clear 4.5:1 against the field. The shadcn defaults use
+      `--muted-foreground` at whatever alpha Tailwind applies by default, which
+      reads as near-invisible grey on white.
+    */
+    input::placeholder,
+    textarea::placeholder {
+        color: var(--color-mori-muted);
+        opacity: 1;
     }
 }

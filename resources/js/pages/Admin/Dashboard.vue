@@ -11,8 +11,12 @@ import {
     ShoppingBag,
 } from '@lucide/vue';
 import AdminTopbar from '@/components/admin/AdminTopbar.vue';
+import ColumnChart from '@/components/mori/ColumnChart.vue';
 import DataTable from '@/components/mori/DataTable.vue';
+import DonutChart from '@/components/mori/DonutChart.vue';
 import EmptyState from '@/components/mori/EmptyState.vue';
+import KpiTile from '@/components/mori/KpiTile.vue';
+import ReportCard from '@/components/mori/ReportCard.vue';
 import StatusBadge from '@/components/mori/StatusBadge.vue';
 import { api, errorMessage } from '@/lib/api';
 import { formatDate } from '@/lib/format';
@@ -27,6 +31,22 @@ const kpis = ref<Kpis | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
 
+/** Short currency for axis ticks; the tiles use the full figure. */
+function compactCurrency(value: number): string {
+    return `฿${new Intl.NumberFormat('en', {
+        notation: 'compact',
+        maximumFractionDigits: 1,
+    }).format(value)}`;
+}
+
+function formatCurrency(value: number): string {
+    return new Intl.NumberFormat('th-TH', {
+        style: 'currency',
+        currency: 'THB',
+        maximumFractionDigits: 0,
+    }).format(value);
+}
+
 const statCards = computed(() => {
     const data = kpis.value;
 
@@ -40,6 +60,7 @@ const statCards = computed(() => {
             value: formatCurrency(data.revenue),
             hint: `${formatCurrency(data.revenue_today)} today`,
             icon: CircleDollarSign,
+            primary: true,
         },
         {
             label: 'Orders',
@@ -68,24 +89,76 @@ const statCards = computed(() => {
     ];
 });
 
-const chartMax = computed(() => {
-    const values = kpis.value?.revenue_series.map((point) => point.revenue) ?? [];
+const revenuePoints = computed(
+    () =>
+        kpis.value?.revenue_series.map((point) => ({
+            date: point.date,
+            value: point.revenue,
+        })) ?? [],
+);
 
-    return Math.max(1, ...values);
-});
+const orderPoints = computed(
+    () =>
+        kpis.value?.order_series.map((point) => ({
+            date: point.date,
+            value: point.count,
+        })) ?? [],
+);
 
 const channelTotal = computed(
     () => (kpis.value?.pickup_orders ?? 0) + (kpis.value?.delivery_orders ?? 0),
 );
 
-const pickupShare = computed(() =>
-    channelTotal.value === 0
-        ? 0
-        : Math.round(((kpis.value?.pickup_orders ?? 0) / channelTotal.value) * 100),
-);
+const channels = computed(() => [
+    {
+        label: 'Pickup',
+        value: kpis.value?.pickup_orders ?? 0,
+        color: 'var(--mori-wine)',
+    },
+    {
+        label: 'Delivery',
+        value: kpis.value?.delivery_orders ?? 0,
+        color: 'var(--mori-brass)',
+    },
+]);
+
+const reservationShown = computed(() => {
+    const data = kpis.value;
+
+    if (!data) {
+        return [];
+    }
+
+    return [
+        {
+            label: 'Completed',
+            value: data.completed_reservations,
+            color: 'var(--mori-wine)',
+        },
+        {
+            label: 'No-show',
+            value: data.no_show_reservations,
+            color: 'var(--mori-brass)',
+        },
+        {
+            label: 'Other',
+            value: Math.max(
+                0,
+                data.reservation_count -
+                    data.completed_reservations -
+                    data.no_show_reservations,
+            ),
+            color: 'var(--mori-line)',
+        },
+    ].filter((slice) => slice.value > 0);
+});
 
 const recentRows = computed(
-    () => (kpis.value?.recent_orders ?? []) as unknown as Record<string, unknown>[],
+    () =>
+        (kpis.value?.recent_orders ?? []) as unknown as Record<
+            string,
+            unknown
+        >[],
 );
 
 const recentColumns = [
@@ -94,14 +167,6 @@ const recentColumns = [
     { key: 'status', label: 'Status' },
     { key: 'total', label: 'Total', align: 'right' as const },
 ];
-
-function formatCurrency(value: number): string {
-    return new Intl.NumberFormat('th-TH', {
-        style: 'currency',
-        currency: 'THB',
-        maximumFractionDigits: 0,
-    }).format(value);
-}
 
 async function load(): Promise<void> {
     loading.value = true;
@@ -129,157 +194,132 @@ onMounted(() => void load());
     <AdminTopbar title="Dashboard" :subtitle="restaurant.name" />
 
     <div class="flex-1 px-5 py-6 lg:px-8">
+        <!-- Report toolbar -->
         <div class="flex flex-wrap items-center justify-between gap-3">
             <p class="text-sm text-mori-muted">
                 <template v-if="kpis">
-                    {{ formatDate(kpis.range.from) }} – {{ formatDate(kpis.range.to) }}
+                    {{ formatDate(kpis.range.from) }} –
+                    {{ formatDate(kpis.range.to) }}
                 </template>
                 <template v-else>Last 30 days</template>
             </p>
             <button
                 type="button"
-                class="inline-flex items-center gap-1.5 rounded border border-[#e3e5df] bg-white px-3 py-2 text-xs font-medium text-mori-ink hover:bg-mori-cream"
+                class="inline-flex items-center gap-1.5 rounded border border-mori-field bg-mori-paper px-3 py-2 text-xs font-medium text-mori-ink hover:bg-mori-cream disabled:cursor-not-allowed disabled:bg-[#ede9e1] disabled:text-mori-muted"
                 :disabled="loading"
                 @click="load"
             >
-                <RefreshCw class="size-3.5" aria-hidden="true" />
-                Refresh
+                <RefreshCw
+                    class="size-3.5"
+                    :class="{ 'animate-spin': loading }"
+                    aria-hidden="true"
+                />
+                {{ loading ? 'Refreshing…' : 'Refresh' }}
             </button>
         </div>
 
         <p
             v-if="error"
-            class="mt-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            class="mt-4 rounded border border-[#f0c4c4] bg-[#fae9e9] px-4 py-3 text-sm text-[#7a1f1f]"
             role="alert"
         >
             {{ error }}
         </p>
 
-        <div v-if="loading" class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div
+            v-if="loading"
+            class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-5"
+            aria-busy="true"
+        >
             <div
                 v-for="index in 5"
                 :key="index"
-                class="h-28 animate-pulse rounded border border-[#e3e5df] bg-white"
+                class="h-28 animate-pulse rounded-lg border border-mori-line bg-mori-paper"
             />
         </div>
 
         <template v-else-if="kpis">
+            <!-- KPI strip -->
             <div class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-                <div
+                <KpiTile
                     v-for="card in statCards"
                     :key="card.label"
-                    class="rounded border border-[#e3e5df] bg-white p-4"
-                >
-                    <div class="flex items-center justify-between">
-                        <p class="text-xs tracking-wide text-mori-muted uppercase">
-                            {{ card.label }}
-                        </p>
-                        <component
-                            :is="card.icon"
-                            class="size-4 text-mori-muted"
-                            aria-hidden="true"
-                        />
-                    </div>
-                    <p class="mt-2 font-display text-2xl text-mori-ink">
-                        {{ card.value }}
-                    </p>
-                    <p class="mt-1 text-xs text-mori-muted">{{ card.hint }}</p>
-                </div>
+                    :label="card.label"
+                    :value="card.value"
+                    :hint="card.hint"
+                    :icon="card.icon"
+                    :primary="card.primary ?? false"
+                />
             </div>
 
-            <div class="mt-4 grid gap-4 lg:grid-cols-[1fr_320px]">
-                <section class="rounded border border-[#e3e5df] bg-white p-5">
-                    <h2 class="text-sm font-semibold text-mori-ink">
-                        Revenue
-                    </h2>
-                    <p class="mt-1 text-xs text-mori-muted">
-                        Paid orders only. Cancelled, rejected and refunded orders
-                        are excluded.
-                    </p>
-
-                    <div
-                        v-if="kpis.revenue_series.length"
-                        class="mt-5 flex h-48 items-end gap-1"
-                        role="img"
-                        :aria-label="`Daily revenue for ${kpis.revenue_series.length} days`"
-                    >
-                        <div
-                            v-for="point in kpis.revenue_series"
-                            :key="point.date"
-                            class="group relative flex-1 rounded-t bg-mori-sage/30 transition-colors hover:bg-mori-sage/60"
-                            :style="{
-                                height: `${Math.max(2, (point.revenue / chartMax) * 100)}%`,
-                            }"
-                        >
-                            <span
-                                class="pointer-events-none absolute -top-8 left-1/2 hidden -translate-x-1/2 rounded bg-mori-ink px-2 py-1 text-[10px] whitespace-nowrap text-white group-hover:block"
-                            >
-                                {{ formatDate(point.date) }} ·
-                                {{ formatCurrency(point.revenue) }}
-                            </span>
-                        </div>
-                    </div>
-
-                    <p v-else class="mt-5 text-sm text-mori-muted">
+            <!-- Analysis row -->
+            <div class="mt-4 grid gap-4 lg:grid-cols-3">
+                <ReportCard
+                    class="lg:col-span-2"
+                    title="Revenue"
+                    caption="Paid orders only. Cancelled, rejected and refunded orders are excluded."
+                >
+                    <ColumnChart
+                        v-if="revenuePoints.length"
+                        :points="revenuePoints"
+                        :format="compactCurrency"
+                        :label="`Daily revenue for ${revenuePoints.length} days`"
+                    />
+                    <p v-else class="py-10 text-center text-sm text-mori-muted">
                         No revenue in this period.
                     </p>
-                </section>
+                </ReportCard>
 
-                <section class="rounded border border-[#e3e5df] bg-white p-5">
-                    <h2 class="text-sm font-semibold text-mori-ink">Channels</h2>
-                    <p class="mt-1 text-xs text-mori-muted">
-                        Order mix for the period.
-                    </p>
-
-                    <div v-if="channelTotal" class="mt-6">
-                        <div
-                            class="flex h-3 overflow-hidden rounded-full bg-mori-cream"
-                            role="img"
-                            :aria-label="`${pickupShare}% pickup, ${100 - pickupShare}% delivery`"
-                        >
-                            <div
-                                class="bg-mori-wine"
-                                :style="{ width: `${pickupShare}%` }"
-                            />
-                            <div
-                                class="bg-mori-sand"
-                                :style="{ width: `${100 - pickupShare}%` }"
-                            />
-                        </div>
-
-                        <dl class="mt-5 space-y-3 text-sm">
-                            <div class="flex items-center justify-between">
-                                <dt class="flex items-center gap-2 text-mori-muted">
-                                    <span class="size-2.5 rounded-full bg-mori-wine" />
-                                    Pickup
-                                </dt>
-                                <dd class="font-medium text-mori-ink">
-                                    {{ kpis.pickup_orders }} ({{ pickupShare }}%)
-                                </dd>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <dt class="flex items-center gap-2 text-mori-muted">
-                                    <span class="size-2.5 rounded-full bg-mori-sand" />
-                                    Delivery
-                                </dt>
-                                <dd class="font-medium text-mori-ink">
-                                    {{ kpis.delivery_orders }} ({{ 100 - pickupShare }}%)
-                                </dd>
-                            </div>
-                        </dl>
-                    </div>
-
-                    <p v-else class="mt-6 text-sm text-mori-muted">
+                <ReportCard
+                    title="Order channels"
+                    caption="Pickup versus delivery for the period."
+                >
+                    <DonutChart
+                        v-if="channelTotal"
+                        :slices="channels"
+                        label="Order channels"
+                    />
+                    <p v-else class="py-10 text-center text-sm text-mori-muted">
                         No orders in this period.
                     </p>
-                </section>
+                </ReportCard>
             </div>
 
-            <section class="mt-4">
+            <div class="mt-4 grid gap-4 lg:grid-cols-3">
+                <ReportCard
+                    title="Order volume"
+                    caption="Orders placed per day."
+                >
+                    <ColumnChart
+                        v-if="orderPoints.length"
+                        :points="orderPoints"
+                        :format="(value) => String(Math.round(value))"
+                        :label="`Daily order count for ${orderPoints.length} days`"
+                    />
+                    <p v-else class="py-10 text-center text-sm text-mori-muted">
+                        No orders in this period.
+                    </p>
+                </ReportCard>
+
+                <ReportCard
+                    title="Reservations"
+                    caption="Outcome mix for the period."
+                >
+                    <DonutChart
+                        v-if="reservationShown.length"
+                        :slices="reservationShown"
+                        label="Reservation outcomes"
+                    />
+                    <p v-else class="py-10 text-center text-sm text-mori-muted">
+                        No reservations in this period.
+                    </p>
+                </ReportCard>
+            </div>
+
+            <!-- Detail -->
+            <div class="mt-4">
                 <div class="mb-3 flex items-center justify-between">
-                    <h2 class="text-sm font-semibold text-mori-ink">
-                        Recent orders
-                    </h2>
+                    <h2 class="report-card-title">Recent orders</h2>
                     <Link
                         href="/admin/orders"
                         class="inline-flex items-center gap-1 text-xs font-medium text-mori-wine hover:underline"
@@ -299,13 +339,15 @@ onMounted(() => void load());
                     <template #cell-order_number="{ row }">
                         <Link
                             :href="`/admin/orders/${row.id}`"
-                            class="font-medium text-mori-ink hover:underline"
+                            class="font-medium text-mori-ink underline-offset-4 hover:underline"
                         >
                             {{ row.order_number }}
                         </Link>
                     </template>
                     <template #cell-order_type="{ row }">
-                        <span class="text-xs tracking-wide text-mori-muted uppercase">
+                        <span
+                            class="text-xs tracking-wide text-mori-muted uppercase"
+                        >
                             {{ row.order_type }}
                         </span>
                     </template>
@@ -313,12 +355,7 @@ onMounted(() => void load());
                         <StatusBadge :status="String(row.status)" />
                     </template>
                     <template #cell-total="{ row }">
-                        {{
-                            new Intl.NumberFormat('th-TH', {
-                                style: 'currency',
-                                currency: 'THB',
-                            }).format(Number(row.total))
-                        }}
+                        {{ formatCurrency(Number(row.total)) }}
                     </template>
                 </DataTable>
 
@@ -327,7 +364,7 @@ onMounted(() => void load());
                     title="No orders yet"
                     description="Orders will appear here as soon as they are placed."
                 />
-            </section>
+            </div>
         </template>
 
         <EmptyState

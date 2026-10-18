@@ -30,9 +30,13 @@ const page = ref(1);
 
 const activeOrders = computed(() =>
     orders.value.filter((order) =>
-        ['PLACED', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY'].includes(
-            order.status,
-        ),
+        [
+            'PLACED',
+            'CONFIRMED',
+            'PREPARING',
+            'READY',
+            'OUT_FOR_DELIVERY',
+        ].includes(order.status),
     ),
 );
 
@@ -79,7 +83,11 @@ onMounted(() => void load());
             </template>
         </SectionHeading>
 
-        <div class="mt-8 flex flex-wrap gap-2" role="group" aria-label="Filter by status">
+        <div
+            class="mt-8 flex flex-wrap gap-2"
+            role="group"
+            aria-label="Filter by status"
+        >
             <button
                 v-for="option in statuses"
                 :key="option.value || 'all'"
@@ -102,7 +110,7 @@ onMounted(() => void load());
 
         <p
             v-if="error"
-            class="mt-6 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            class="mt-6 rounded border border-[#f0c4c4] bg-[#fae9e9] px-4 py-3 text-sm text-[#7a1f1f]"
             role="alert"
         >
             {{ error }}
@@ -121,11 +129,15 @@ onMounted(() => void load());
                 v-if="activeOrders.length && !status"
                 class="mt-6 text-sm text-mori-muted"
             >
-                {{ activeOrders.length }} order{{ activeOrders.length === 1 ? '' : 's' }}
+                {{ activeOrders.length }} order{{
+                    activeOrders.length === 1 ? '' : 's'
+                }}
                 in progress.
             </p>
 
-            <ul class="mt-4 divide-y divide-mori-line overflow-hidden rounded border border-mori-line bg-mori-paper">
+            <ul
+                class="mt-4 divide-y divide-mori-line overflow-hidden rounded border border-mori-line bg-mori-paper"
+            >
                 <li v-for="order in orders" :key="order.id">
                     <Link
                         :href="`/orders/${order.id}`"
@@ -151,9 +163,7 @@ onMounted(() => void load());
                             <p class="font-display text-lg text-mori-ink">
                                 {{ formatMoney(order.totals.total) }}
                             </p>
-                            <p class="text-xs text-mori-muted">
-                                View details
-                            </p>
+                            <p class="text-xs text-mori-muted">View details</p>
                         </div>
                     </Link>
                 </li>

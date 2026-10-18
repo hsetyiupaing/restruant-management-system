@@ -73,6 +73,8 @@ return [
     |
     */
 
+    // Left as the dashboard route; the role-aware LoginResponse/RegisterResponse
+    // redirect each role to a page it can actually open.
     'home' => '/dashboard',
 
     /*

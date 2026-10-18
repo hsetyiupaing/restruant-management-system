@@ -19,13 +19,13 @@ session guard. There are no API keys or tokens in the browser flow.
 
 Requirements:
 
-| Setting | Value |
-|---|---|
-| `SESSION_DRIVER` | `cookie`, `database` or `redis` (not `array`) |
-| `SANCTUM_STATEFUL_DOMAINS` | hosts of the SPA, e.g. `localhost:5173` |
-| `FRONTEND_URL` | SPA origin used by `config/cors.php` |
-| `SESSION_DOMAIN`, `SESSION_SECURE_COOKIE`, `SESSION_SAME_SITE` | set to match the deployment topology |
-| `APP_URL` | must match the API host |
+| Setting                                                        | Value                                         |
+| -------------------------------------------------------------- | --------------------------------------------- |
+| `SESSION_DRIVER`                                               | `cookie`, `database` or `redis` (not `array`) |
+| `SANCTUM_STATEFUL_DOMAINS`                                     | hosts of the SPA, e.g. `localhost:5173`       |
+| `FRONTEND_URL`                                                 | SPA origin used by `config/cors.php`          |
+| `SESSION_DOMAIN`, `SESSION_SECURE_COOKIE`, `SESSION_SAME_SITE` | set to match the deployment topology          |
+| `APP_URL`                                                      | must match the API host                       |
 
 `supports_credentials => true` in `config/cors.php`; CORS only allows the origin from
 `FRONTEND_URL`. Nothing session-related, no secrets and no password hashes are ever returned.
@@ -40,24 +40,24 @@ Validation (`422`), business-rule (`409`/`422`) and authorization (`403`) errors
 
 ```json
 {
-  "message": "The given data was invalid.",
-  "errors": {
-    "items": ["One or more items are unavailable."]
-  }
+    "message": "The given data was invalid.",
+    "errors": {
+        "items": ["One or more items are unavailable."]
+    }
 }
 ```
 
-| Status | Meaning |
-|---|---|
-| `200` | OK |
-| `201` | Created |
-| `204` | No content (logout, deletes without a body) |
-| `401` | Not authenticated |
-| `403` | Authenticated but not allowed (policy or membership) |
-| `404` | Not found, **or** an ID that belongs to another restaurant |
-| `409` | Conflict — category still referenced, table just booked |
-| `422` | Validation or business-rule violation (illegal status transition, minimum order, closed restaurant…) |
-| `429` | Rate limited (`Retry-After` header set) |
+| Status | Meaning                                                                                              |
+| ------ | ---------------------------------------------------------------------------------------------------- |
+| `200`  | OK                                                                                                   |
+| `201`  | Created                                                                                              |
+| `204`  | No content (logout, deletes without a body)                                                          |
+| `401`  | Not authenticated                                                                                    |
+| `403`  | Authenticated but not allowed (policy or membership)                                                 |
+| `404`  | Not found, **or** an ID that belongs to another restaurant                                           |
+| `409`  | Conflict — category still referenced, table just booked                                              |
+| `422`  | Validation or business-rule violation (illegal status transition, minimum order, closed restaurant…) |
+| `429`  | Rate limited (`Retry-After` header set)                                                              |
 
 ---
 
@@ -67,29 +67,34 @@ Every index endpoint returns Laravel's paginator envelope:
 
 ```json
 {
-  "data": [],
-  "links": { "first": "…", "last": "…", "prev": null, "next": null },
-  "meta": {
-    "current_page": 1, "from": 1, "last_page": 3, "per_page": 15,
-    "path": "…", "to": 15, "total": 42
-  }
+    "data": [],
+    "links": { "first": "…", "last": "…", "prev": null, "next": null },
+    "meta": {
+        "current_page": 1,
+        "from": 1,
+        "last_page": 3,
+        "per_page": 15,
+        "path": "…",
+        "to": 15,
+        "total": 42
+    }
 }
 ```
 
 `per_page` is clamped to **1–100** (default 15). Query strings are preserved in the paginator links.
 
-| Endpoint | Filters |
-|---|---|
-| `GET /restaurants` | `search`, `per_page` |
-| `GET /restaurants/{slug}/menu-items` | `category_id`, `category` (name), `featured=1`, `search`, `per_page` |
-| `GET /orders` | `status`, `per_page` |
-| `GET /reservations` | `status`, `upcoming=1`, `per_page` |
-| `GET /admin/restaurants` | `search`, `is_active`, `per_page` |
-| `GET .../menu-items` | `category_id`, `is_available`, `is_featured`, `search`, `per_page` (includes soft-deleted rows, flagged by `deleted_at`) |
-| `GET .../orders` | `status`, `order_type`, `payment_status`, `from`, `to`, `active=1`, `per_page` |
-| `GET .../reservations` | `status`, `date`, `from`, `to`, `table_id`, `per_page` |
-| `GET .../deliveries` | `delivery_status`, `active=1`, `driver_id`, `per_page` |
-| `GET .../members` | `role`, `per_page` |
+| Endpoint                             | Filters                                                                                                                  |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `GET /restaurants`                   | `search`, `per_page`                                                                                                     |
+| `GET /restaurants/{slug}/menu-items` | `category_id`, `category` (name), `featured=1`, `search`, `per_page`                                                     |
+| `GET /orders`                        | `status`, `per_page`                                                                                                     |
+| `GET /reservations`                  | `status`, `upcoming=1`, `per_page`                                                                                       |
+| `GET /admin/restaurants`             | `search`, `is_active`, `per_page`                                                                                        |
+| `GET .../menu-items`                 | `category_id`, `is_available`, `is_featured`, `search`, `per_page` (includes soft-deleted rows, flagged by `deleted_at`) |
+| `GET .../orders`                     | `status`, `order_type`, `payment_status`, `from`, `to`, `active=1`, `per_page`                                           |
+| `GET .../reservations`               | `status`, `date`, `from`, `to`, `table_id`, `per_page`                                                                   |
+| `GET .../deliveries`                 | `delivery_status`, `active=1`, `driver_id`, `per_page`                                                                   |
+| `GET .../members`                    | `role`, `per_page`                                                                                                       |
 
 Lists that are inherently bounded and small are not paginated: categories, floor-plan tables,
 an order's payments and status history.
@@ -98,34 +103,34 @@ an order's payments and status history.
 
 ## 4. Enums
 
-| Enum | Values |
-|---|---|
-| `user.role` | `CUSTOMER`, `STAFF`, `ADMIN`, `SUPER_ADMIN` |
-| `restaurant_members.role` | `STAFF`, `ADMIN` |
-| `restaurant_members.staff_type` | `CASHIER`, `KITCHEN`, `WAITER`, `DRIVER`, `null` |
-| `table.shape` | `ROUND`, `SQUARE`, `RECT` |
-| `order.order_type` | `PICKUP`, `DELIVERY` |
-| `order.status` | `PLACED`, `CONFIRMED`, `PREPARING`, `READY`, `OUT_FOR_DELIVERY`, `COMPLETED`, `CANCELLED`, `REJECTED`, `DELIVERY_FAILED`, `REFUNDED` |
-| `order.payment_status` | `UNPAID`, `PAID`, `FAILED`, `REFUNDED` |
-| `payment.method` | `CASH`, `CARD`, `ONLINE` |
-| `payment.status` | `UNPAID`, `PAID`, `FAILED`, `REFUNDED` |
-| `delivery.status` | `UNASSIGNED`, `ASSIGNED`, `PICKED_UP`, `DELIVERED`, `FAILED` |
-| `reservation.status` | `PENDING`, `CONFIRMED`, `SEATED`, `COMPLETED`, `CANCELLED`, `NO_SHOW`, `EXPIRED` |
+| Enum                            | Values                                                                                                                               |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `user.role`                     | `CUSTOMER`, `STAFF`, `ADMIN`, `SUPER_ADMIN`                                                                                          |
+| `restaurant_members.role`       | `STAFF`, `ADMIN`                                                                                                                     |
+| `restaurant_members.staff_type` | `CASHIER`, `KITCHEN`, `WAITER`, `DRIVER`, `null`                                                                                     |
+| `table.shape`                   | `ROUND`, `SQUARE`, `RECT`                                                                                                            |
+| `order.order_type`              | `PICKUP`, `DELIVERY`                                                                                                                 |
+| `order.status`                  | `PLACED`, `CONFIRMED`, `PREPARING`, `READY`, `OUT_FOR_DELIVERY`, `COMPLETED`, `CANCELLED`, `REJECTED`, `DELIVERY_FAILED`, `REFUNDED` |
+| `order.payment_status`          | `UNPAID`, `PAID`, `FAILED`, `REFUNDED`                                                                                               |
+| `payment.method`                | `CASH`, `CARD`, `ONLINE`                                                                                                             |
+| `payment.status`                | `UNPAID`, `PAID`, `FAILED`, `REFUNDED`                                                                                               |
+| `delivery.status`               | `UNASSIGNED`, `ASSIGNED`, `PICKED_UP`, `DELIVERED`, `FAILED`                                                                         |
+| `reservation.status`            | `PENDING`, `CONFIRMED`, `SEATED`, `COMPLETED`, `CANCELLED`, `NO_SHOW`, `EXPIRED`                                                     |
 
 ### Status transitions
 
 **Orders** (staff; "admin" is an extra set for restaurant/admin platform administrators)
 
-| From | Staff → | Admin additionally → |
-|---|---|---|
-| `PLACED` | `CONFIRMED`, `REJECTED`, `CANCELLED` | — |
-| `CONFIRMED` | `PREPARING` | `CANCELLED` |
-| `PREPARING` | `READY` | `CANCELLED` |
-| `READY` | `COMPLETED` (pickup) / `OUT_FOR_DELIVERY` (delivery) | `CANCELLED` |
-| `OUT_FOR_DELIVERY` | `COMPLETED`, `DELIVERY_FAILED` | `CANCELLED` |
-| `DELIVERY_FAILED` | `OUT_FOR_DELIVERY` | `CANCELLED` |
-| `COMPLETED` | — | `REFUNDED` |
-| `CANCELLED`, `REJECTED`, `REFUNDED` | terminal | — |
+| From                                | Staff →                                              | Admin additionally → |
+| ----------------------------------- | ---------------------------------------------------- | -------------------- |
+| `PLACED`                            | `CONFIRMED`, `REJECTED`, `CANCELLED`                 | —                    |
+| `CONFIRMED`                         | `PREPARING`                                          | `CANCELLED`          |
+| `PREPARING`                         | `READY`                                              | `CANCELLED`          |
+| `READY`                             | `COMPLETED` (pickup) / `OUT_FOR_DELIVERY` (delivery) | `CANCELLED`          |
+| `OUT_FOR_DELIVERY`                  | `COMPLETED`, `DELIVERY_FAILED`                       | `CANCELLED`          |
+| `DELIVERY_FAILED`                   | `OUT_FOR_DELIVERY`                                   | `CANCELLED`          |
+| `COMPLETED`                         | —                                                    | `REFUNDED`           |
+| `CANCELLED`, `REJECTED`, `REFUNDED` | terminal                                             | —                    |
 
 Customers may cancel only their own `PLACED` orders.
 
@@ -145,13 +150,13 @@ Every transition writes a history row. Illegal transitions return `422`.
 
 ### 5.1 Auth
 
-| Method | Path | Auth | Notes |
-|---|---|---|---|
-| POST | `/auth/register` | — | throttle 6/min; always creates `CUSTOMER` |
-| POST | `/auth/login` | — | throttle 10/min + 5 failed attempts/min per email+IP |
-| POST | `/auth/logout` | session | `204` |
-| GET | `/auth/me` | session | |
-| PATCH | `/auth/me` | session | `name`, `email` only; changing email clears verification |
+| Method | Path             | Auth    | Notes                                                    |
+| ------ | ---------------- | ------- | -------------------------------------------------------- |
+| POST   | `/auth/register` | —       | throttle 6/min; always creates `CUSTOMER`                |
+| POST   | `/auth/login`    | —       | throttle 10/min + 5 failed attempts/min per email+IP     |
+| POST   | `/auth/logout`   | session | `204`                                                    |
+| GET    | `/auth/me`       | session |                                                          |
+| PATCH  | `/auth/me`       | session | `name`, `email` only; changing email clears verification |
 
 ```http
 POST /api/v1/auth/register
@@ -165,27 +170,39 @@ POST /api/v1/auth/register
 
 No authentication. Only `is_active` restaurants, only available non-deleted menu items.
 
-| Method | Path | Query |
-|---|---|---|
-| GET | `/restaurants` | `search`, `per_page` |
-| GET | `/restaurants/{slug}` | — |
-| GET | `/restaurants/{slug}/categories` | — (includes `menu_items_count` of available items) |
-| GET | `/restaurants/{slug}/menu-items` | `category_id`, `category`, `featured`, `search`, `per_page` |
-| GET | `/restaurants/{slug}/menu-items/{menuItem}` | — (404 if it belongs elsewhere or is unavailable) |
-| GET | `/restaurants/{slug}/availability` | `date=Y-m-d`, `time=H:i`, `party_size` |
+| Method | Path                                        | Query                                                       |
+| ------ | ------------------------------------------- | ----------------------------------------------------------- |
+| GET    | `/restaurants`                              | `search`, `per_page`                                        |
+| GET    | `/restaurants/{slug}`                       | —                                                           |
+| GET    | `/restaurants/{slug}/categories`            | — (includes `menu_items_count` of available items)          |
+| GET    | `/restaurants/{slug}/menu-items`            | `category_id`, `category`, `featured`, `search`, `per_page` |
+| GET    | `/restaurants/{slug}/menu-items/{menuItem}` | — (404 if it belongs elsewhere or is unavailable)           |
+| GET    | `/restaurants/{slug}/availability`          | `date=Y-m-d`, `time=H:i`, `party_size`                      |
 
 Availability response:
 
 ```json
-{ "data": {
-    "restaurant": { "id": 1, "slug": "ember-and-oak", "slot_minutes": 90 },
-    "start_time": "2026-10-20T18:00:00+00:00",
-    "end_time":   "2026-10-20T19:30:00+00:00",
-    "tables": [
-      { "id": 2, "label": "E2", "capacity": 4, "min_capacity": 2, "shape": "SQUARE",
-        "pos_x": 320, "pos_y": 140, "status": "AVAILABLE", "fits_party": true }
-    ] },
-  "meta": { "available_count": 3 } }
+{
+    "data": {
+        "restaurant": { "id": 1, "slug": "ember-and-oak", "slot_minutes": 90 },
+        "start_time": "2026-10-20T18:00:00+00:00",
+        "end_time": "2026-10-20T19:30:00+00:00",
+        "tables": [
+            {
+                "id": 2,
+                "label": "E2",
+                "capacity": 4,
+                "min_capacity": 2,
+                "shape": "SQUARE",
+                "pos_x": 320,
+                "pos_y": 140,
+                "status": "AVAILABLE",
+                "fits_party": true
+            }
+        ]
+    },
+    "meta": { "available_count": 3 }
+}
 ```
 
 `status` is `AVAILABLE`, `RESERVED`, `OCCUPIED` (a seated reservation) or `UNAVAILABLE`
@@ -193,12 +210,12 @@ Availability response:
 
 ### 5.3 Customer orders
 
-| Method | Path | Notes |
-|---|---|---|
-| GET | `/orders` | own orders; `status`, `per_page` |
-| POST | `/orders` | throttle 20/min; optional `Idempotency-Key` header |
-| GET | `/orders/{order}` | owner, restaurant member, or platform admin |
-| POST | `/orders/{order}/cancel` | own `PLACED` order only |
+| Method | Path                     | Notes                                              |
+| ------ | ------------------------ | -------------------------------------------------- |
+| GET    | `/orders`                | own orders; `status`, `per_page`                   |
+| POST   | `/orders`                | throttle 20/min; optional `Idempotency-Key` header |
+| GET    | `/orders/{order}`        | owner, restaurant member, or platform admin        |
+| POST   | `/orders/{order}/cancel` | own `PLACED` order only                            |
 
 ```http
 POST /api/v1/orders
@@ -248,23 +265,71 @@ again within 24 hours returns the original order with `201`.
 #### 5.3.1 Order resource
 
 ```json
-{ "data": {
-    "id": 12, "order_number": "ORD-20261018-7Q4ZK2M8",
-    "order_type": "DELIVERY", "status": "PLACED", "payment_status": "UNPAID",
-    "restaurant": { "id": 1, "name": "Ember & Oak", "slug": "ember-and-oak" },
-    "customer": { "id": 4, "name": "Ada Lovelace", "email": "ada@example.test" },
-    "reservation": null,
-    "items": [
-      { "id": 30, "menu_item_id": 4, "name": "Ember Burger",
-        "unit_price": "17.50", "quantity": 2, "line_total": "35.00", "note": "no onion" }
-    ],
-    "delivery": { "id": 3, "driver_id": null, "delivery_status": "UNASSIGNED", "...": "…" },
-    "payments": [ { "id": 9, "method": "CASH", "amount": "38.50", "status": "PAID", "paid_at": "…" } ],
-    "status_history": [ { "from_status": null, "to_status": "PLACED", "changed_by": null, "changed_at": "…" } ],
-    "totals": { "subtotal": "35.00", "delivery_fee": "3.50", "tax": "3.50", "discount": "0.00", "total": "42.00" },
-    "scheduled_for": null, "customer_note": "Leave at the door",
-    "created_at": "2026-10-18T18:04:11+00:00", "updated_at": "2026-10-18T18:04:11+00:00"
-  } }
+{
+    "data": {
+        "id": 12,
+        "order_number": "ORD-20261018-7Q4ZK2M8",
+        "order_type": "DELIVERY",
+        "status": "PLACED",
+        "payment_status": "UNPAID",
+        "restaurant": {
+            "id": 1,
+            "name": "Ember & Oak",
+            "slug": "ember-and-oak"
+        },
+        "customer": {
+            "id": 4,
+            "name": "Ada Lovelace",
+            "email": "ada@example.test"
+        },
+        "reservation": null,
+        "items": [
+            {
+                "id": 30,
+                "menu_item_id": 4,
+                "name": "Ember Burger",
+                "unit_price": "17.50",
+                "quantity": 2,
+                "line_total": "35.00",
+                "note": "no onion"
+            }
+        ],
+        "delivery": {
+            "id": 3,
+            "driver_id": null,
+            "delivery_status": "UNASSIGNED",
+            "...": "…"
+        },
+        "payments": [
+            {
+                "id": 9,
+                "method": "CASH",
+                "amount": "38.50",
+                "status": "PAID",
+                "paid_at": "…"
+            }
+        ],
+        "status_history": [
+            {
+                "from_status": null,
+                "to_status": "PLACED",
+                "changed_by": null,
+                "changed_at": "…"
+            }
+        ],
+        "totals": {
+            "subtotal": "35.00",
+            "delivery_fee": "3.50",
+            "tax": "3.50",
+            "discount": "0.00",
+            "total": "42.00"
+        },
+        "scheduled_for": null,
+        "customer_note": "Leave at the door",
+        "created_at": "2026-10-18T18:04:11+00:00",
+        "updated_at": "2026-10-18T18:04:11+00:00"
+    }
+}
 ```
 
 Money is emitted as strings to avoid float drift. Related collections only appear when the
@@ -272,12 +337,12 @@ endpoint eager-loads them.
 
 ### 5.4 Customer reservations
 
-| Method | Path | Notes |
-|---|---|---|
-| GET | `/reservations` | own; `status`, `upcoming=1`, `per_page` |
-| POST | `/reservations` | throttle 10/min |
-| GET | `/reservations/{reservation}` | owner, member, or platform admin |
-| POST | `/reservations/{reservation}/cancel` | cutoff rules apply |
+| Method | Path                                 | Notes                                   |
+| ------ | ------------------------------------ | --------------------------------------- |
+| GET    | `/reservations`                      | own; `status`, `upcoming=1`, `per_page` |
+| POST   | `/reservations`                      | throttle 10/min                         |
+| GET    | `/reservations/{reservation}`        | owner, member, or platform admin        |
+| POST   | `/reservations/{reservation}/cancel` | cutoff rules apply                      |
 
 ```http
 POST /api/v1/reservations
@@ -302,14 +367,14 @@ Base: `/api/v1/admin/restaurants/{restaurant}`. Every request requires a session
 inside the restaurant: a customer/category/menu item/table/order from another restaurant returns
 `404`.
 
-| Method | Path | Required |
-|---|---|---|
-| GET | `/admin/restaurants` | platform admin |
-| POST | `/admin/restaurants` | platform admin |
-| PATCH | `/admin/restaurants/{restaurant}` | restaurant admin |
-| POST | `/admin/restaurants/{restaurant}/activate` | platform admin |
-| POST | `/admin/restaurants/{restaurant}/deactivate` | platform admin |
-| GET | `/admin/restaurants/{restaurant}/settings` | membership |
+| Method | Path                                         | Required         |
+| ------ | -------------------------------------------- | ---------------- |
+| GET    | `/admin/restaurants`                         | platform admin   |
+| POST   | `/admin/restaurants`                         | platform admin   |
+| PATCH  | `/admin/restaurants/{restaurant}`            | restaurant admin |
+| POST   | `/admin/restaurants/{restaurant}/activate`   | platform admin   |
+| POST   | `/admin/restaurants/{restaurant}/deactivate` | platform admin   |
+| GET    | `/admin/restaurants/{restaurant}/settings`   | membership       |
 
 `opening_hours` accepts `{"mon":{"open":"11:30","close":"22:30"},…}` keyed `mon`–`sun`, or
 `null` for "always open". `slot_minutes` 15–480, `tax_rate` 0–1, `delivery_fee` and
@@ -317,12 +382,12 @@ inside the restaurant: a customer/category/menu item/table/order from another re
 
 **Members** (restaurant admin)
 
-| Method | Path | Body |
-|---|---|---|
-| GET | `.../members` | `role` filter |
-| POST | `.../members` | `user_id` (unique per restaurant), `role`, `staff_type` |
-| PATCH | `.../members/{member}` | `role`, `staff_type` |
-| DELETE | `.../members/{member}` | `204` |
+| Method | Path                   | Body                                                    |
+| ------ | ---------------------- | ------------------------------------------------------- |
+| GET    | `.../members`          | `role` filter                                           |
+| POST   | `.../members`          | `user_id` (unique per restaurant), `role`, `staff_type` |
+| PATCH  | `.../members/{member}` | `role`, `staff_type`                                    |
+| DELETE | `.../members/{member}` | `204`                                                   |
 
 **Categories** (restaurant admin)
 
@@ -331,18 +396,25 @@ inside the restaurant: a customer/category/menu item/table/order from another re
 
 **Menu items** (restaurant admin)
 
-| Method | Path | Notes |
-|---|---|---|
-| GET | `.../menu-items` | includes soft-deleted; `deleted_at` marks them |
-| POST | `.../menu-items` | body below |
-| GET | `.../menu-items/{menuItem}` | |
-| PATCH | `.../menu-items/{menuItem}` | partial |
-| PATCH | `.../menu-items/{menuItem}/availability` | `{"is_available": false}` |
-| DELETE | `.../menu-items/{menuItem}` | soft delete, `204`; snapshots in order items survive |
+| Method | Path                                     | Notes                                                |
+| ------ | ---------------------------------------- | ---------------------------------------------------- |
+| GET    | `.../menu-items`                         | includes soft-deleted; `deleted_at` marks them       |
+| POST   | `.../menu-items`                         | body below                                           |
+| GET    | `.../menu-items/{menuItem}`              |                                                      |
+| PATCH  | `.../menu-items/{menuItem}`              | partial                                              |
+| PATCH  | `.../menu-items/{menuItem}/availability` | `{"is_available": false}`                            |
+| DELETE | `.../menu-items/{menuItem}`              | soft delete, `204`; snapshots in order items survive |
 
 ```json
-{ "category_id": 3, "name": "Ember Burger", "description": "…",
-  "price": 17.5, "image_url": null, "is_available": true, "is_featured": false }
+{
+    "category_id": 3,
+    "name": "Ember Burger",
+    "description": "…",
+    "price": 17.5,
+    "image_url": null,
+    "is_available": true,
+    "is_featured": false
+}
 ```
 
 `category_id` must belong to the same restaurant (`422` otherwise).
@@ -356,13 +428,13 @@ table without reservations, and `200` with the deactivated table when reservatio
 
 **Orders** (member)
 
-| Method | Path | Notes |
-|---|---|---|
-| GET | `.../orders` | queue filters |
-| GET | `.../orders/{order}` | full detail |
-| PATCH | `.../orders/{order}/status` | `{"status":"PREPARING","reason":"…"}` |
-| GET | `.../orders/{order}/payments` | payment list |
-| POST | `.../orders/{order}/payments` | see §5.6 |
+| Method | Path                          | Notes                                 |
+| ------ | ----------------------------- | ------------------------------------- |
+| GET    | `.../orders`                  | queue filters                         |
+| GET    | `.../orders/{order}`          | full detail                           |
+| PATCH  | `.../orders/{order}/status`   | `{"status":"PREPARING","reason":"…"}` |
+| GET    | `.../orders/{order}/payments` | payment list                          |
+| POST   | `.../orders/{order}/payments` | see §5.6                              |
 
 **Reservations** (member)
 
@@ -372,11 +444,11 @@ increments `users.no_show_count` for the customer.
 
 **Deliveries** (member)
 
-| Method | Path | Notes |
-|---|---|---|
-| GET | `.../deliveries` | `delivery_status`, `active`, `driver_id` |
-| GET | `.../deliveries/{delivery}` | |
-| PATCH | `.../deliveries/{delivery}` | `driver_id`, `delivery_status`, `failure_reason` |
+| Method | Path                        | Notes                                            |
+| ------ | --------------------------- | ------------------------------------------------ |
+| GET    | `.../deliveries`            | `delivery_status`, `active`, `driver_id`         |
+| GET    | `.../deliveries/{delivery}` |                                                  |
+| PATCH  | `.../deliveries/{delivery}` | `driver_id`, `delivery_status`, `failure_reason` |
 
 The driver must be a member of the restaurant (or a platform administrator) — `422` otherwise.
 `failure_reason` is required when moving to `FAILED`. Delivery transitions drive the order
@@ -387,21 +459,38 @@ status through the same transition engine, so history rows are written.
 `GET .../kpis?from=2026-09-19&to=2026-10-18` (defaults: last 30 days).
 
 ```json
-{ "data": {
-    "range": { "from": "2026-09-19", "to": "2026-10-18" },
-    "revenue": 1840.5, "revenue_today": 210.0, "orders_today": 6,
-    "order_count": 52, "completed_order_count": 41,
-    "average_order_value": 44.89, "pending_orders": 4,
-    "pickup_orders": 30, "delivery_orders": 22,
-    "reservation_count": 18, "completed_reservations": 12,
-    "no_show_reservations": 2, "no_show_rate": 11.11,
-    "active_deliveries": 3,
-    "revenue_series": [ { "date": "2026-09-19", "revenue": 0 } ],
-    "order_series":   [ { "date": "2026-09-19", "count": 0 } ],
-    "recent_orders":  [ { "id": 52, "order_number": "…", "status": "PLACED",
-                          "order_type": "PICKUP", "payment_status": "PAID",
-                          "total": "24.00", "created_at": "…" } ]
-  } }
+{
+    "data": {
+        "range": { "from": "2026-09-19", "to": "2026-10-18" },
+        "revenue": 1840.5,
+        "revenue_today": 210.0,
+        "orders_today": 6,
+        "order_count": 52,
+        "completed_order_count": 41,
+        "average_order_value": 44.89,
+        "pending_orders": 4,
+        "pickup_orders": 30,
+        "delivery_orders": 22,
+        "reservation_count": 18,
+        "completed_reservations": 12,
+        "no_show_reservations": 2,
+        "no_show_rate": 11.11,
+        "active_deliveries": 3,
+        "revenue_series": [{ "date": "2026-09-19", "revenue": 0 }],
+        "order_series": [{ "date": "2026-09-19", "count": 0 }],
+        "recent_orders": [
+            {
+                "id": 52,
+                "order_number": "…",
+                "status": "PLACED",
+                "order_type": "PICKUP",
+                "payment_status": "PAID",
+                "total": "24.00",
+                "created_at": "…"
+            }
+        ]
+    }
+}
 ```
 
 Revenue = `SUM(total)` where `payment_status = PAID` and the status is not
@@ -411,18 +500,18 @@ including zero days.
 
 ### 5.6 Payments
 
-| Method | Path | Notes |
-|---|---|---|
-| GET | `/admin/restaurants/{restaurant}/orders/{order}/payments` | member |
-| POST | `/admin/restaurants/{restaurant}/orders/{order}/payments` | member |
-| POST | `/admin/payments/{payment}/refund` | restaurant admin or platform admin |
+| Method | Path                                                      | Notes                              |
+| ------ | --------------------------------------------------------- | ---------------------------------- |
+| GET    | `/admin/restaurants/{restaurant}/orders/{order}/payments` | member                             |
+| POST   | `/admin/restaurants/{restaurant}/orders/{order}/payments` | member                             |
+| POST   | `/admin/payments/{payment}/refund`                        | restaurant admin or platform admin |
 
 ```http
 POST /api/v1/admin/restaurants/1/orders/12/payments
 { "method": "CASH", "amount": 38.50, "status": "PAID", "provider_ref": null }
 ```
 
-`status` may only be `PAID` or `FAILED` — recording a *failed* attempt is supported and does not
+`status` may only be `PAID` or `FAILED` — recording a _failed_ attempt is supported and does not
 mark the order paid. The amount is capped at the order's outstanding balance
 (`total − Σ PAID payments`) → `422` otherwise; the order's `payment_status` is then recomputed
 from its payment rows. Terminal orders reject new payments.
@@ -438,13 +527,13 @@ webhook result (not client input) must drive the payment status.
 
 ## 6. Authorization rules
 
-| Actor | Allowed |
-|---|---|
-| Guest | Public catalogue, availability, register/login |
-| Customer | Own profile, orders and reservations; place orders; cancel own `PLACED` order; cancel own reservation before the 2-hour cutoff |
-| Staff (`restaurant_members.role = STAFF`) | Their restaurant only: settings read, order queue and forward transitions, reservation status changes, delivery updates, recording payments |
+| Actor                                                | Allowed                                                                                                                                                                                |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Guest                                                | Public catalogue, availability, register/login                                                                                                                                         |
+| Customer                                             | Own profile, orders and reservations; place orders; cancel own `PLACED` order; cancel own reservation before the 2-hour cutoff                                                         |
+| Staff (`restaurant_members.role = STAFF`)            | Their restaurant only: settings read, order queue and forward transitions, reservation status changes, delivery updates, recording payments                                            |
 | Restaurant admin (`restaurant_members.role = ADMIN`) | Staff abilities plus restaurant settings, members, categories/menu/tables, administrator-only order transitions (`CANCELLED` after `PREPARING`, `COMPLETED → REFUNDED`), refunds, KPIs |
-| Platform admin (`users.role = ADMIN`/`SUPER_ADMIN`) | Everything, including any restaurant; restaurant creation and activation |
+| Platform admin (`users.role = ADMIN`/`SUPER_ADMIN`)  | Everything, including any restaurant; restaurant creation and activation                                                                                                               |
 
 Enforcement is server-side only: `restaurant.member` middleware for the tenant boundary, then
 Laravel policies (`RestaurantPolicy`, `OrderPolicy`, `ReservationPolicy`, `DeliveryDetailPolicy`,
@@ -459,12 +548,12 @@ membership row bypasses membership checks; a restaurant manager normally has
 
 ## 7. Rate limiting
 
-| Endpoint | Limit |
-|---|---|
-| `POST /auth/register` | 6/min per IP |
-| `POST /auth/login` | 10/min per IP, plus 5 failed attempts/min per email+IP |
-| `POST /orders` | 20/min per user |
-| `POST /reservations` | 10/min per user |
+| Endpoint              | Limit                                                  |
+| --------------------- | ------------------------------------------------------ |
+| `POST /auth/register` | 6/min per IP                                           |
+| `POST /auth/login`    | 10/min per IP, plus 5 failed attempts/min per email+IP |
+| `POST /orders`        | 20/min per user                                        |
+| `POST /reservations`  | 10/min per user                                        |
 
 Exceeding a limit returns `429` with `Retry-After`.
 
@@ -525,17 +614,17 @@ registrable domain (with `Secure` over HTTPS).
 `php artisan db:seed --class=DemoDataSeeder` is idempotent and skips production via
 `DatabaseSeeder`. All accounts use the fake password **`password`**.
 
-| Email | Role | Access |
-|---|---|---|
-| `super.admin@example.test` | SUPER_ADMIN | Everything |
-| `admin@example.test` | ADMIN | Platform admin across restaurants |
-| `ember.manager@example.test` | CUSTOMER + ADMIN membership @ Ember & Oak | Restaurant admin |
-| `ember.cashier@example.test` | STAFF + STAFF membership | Cashier |
-| `ember.kitchen@example.test` | STAFF + STAFF membership | Kitchen |
-| `ember.driver@example.test` | STAFF + STAFF membership (DRIVER) | Delivery |
-| `saffron.manager@example.test` | CUSTOMER + ADMIN membership @ Saffron House | Restaurant admin |
-| `alice@example.test` | CUSTOMER (1 no-show) | Customer |
-| `bob@example.test` | CUSTOMER | Customer |
+| Email                          | Role                                        | Access                            |
+| ------------------------------ | ------------------------------------------- | --------------------------------- |
+| `super.admin@example.test`     | SUPER_ADMIN                                 | Everything                        |
+| `admin@example.test`           | ADMIN                                       | Platform admin across restaurants |
+| `ember.manager@example.test`   | CUSTOMER + ADMIN membership @ Ember & Oak   | Restaurant admin                  |
+| `ember.cashier@example.test`   | STAFF + STAFF membership                    | Cashier                           |
+| `ember.kitchen@example.test`   | STAFF + STAFF membership                    | Kitchen                           |
+| `ember.driver@example.test`    | STAFF + STAFF membership (DRIVER)           | Delivery                          |
+| `saffron.manager@example.test` | CUSTOMER + ADMIN membership @ Saffron House | Restaurant admin                  |
+| `alice@example.test`           | CUSTOMER (1 no-show)                        | Customer                          |
+| `bob@example.test`             | CUSTOMER                                    | Customer                          |
 
 Seeded data: 2 restaurants, 6 categories, 12 menu items, 7 tables, 3 reservations,
 3 orders (pickup + delivery, completed and in-flight), payments, and 15 history rows.
@@ -549,25 +638,25 @@ Seeded data: 2 restaurants, 6 categories, 12 menu items, 7 tables, 3 reservation
 import axios from 'axios';
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL, // http://localhost:8000/api/v1
-  withCredentials: true,
-  headers: { Accept: 'application/json' },
+    baseURL: import.meta.env.VITE_API_URL, // http://localhost:8000/api/v1
+    withCredentials: true,
+    headers: { Accept: 'application/json' },
 });
 
 // Call once before the first mutating request (and after each login).
 export const csrf = () =>
-  axios.get(`${import.meta.env.VITE_BACKEND_URL}/sanctum/csrf-cookie`, {
-    withCredentials: true,
-  });
+    axios.get(`${import.meta.env.VITE_BACKEND_URL}/sanctum/csrf-cookie`, {
+        withCredentials: true,
+    });
 
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // redirect to /login — do not retry blindly
-    }
-    return Promise.reject(error);
-  },
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            // redirect to /login — do not retry blindly
+        }
+        return Promise.reject(error);
+    },
 );
 ```
 

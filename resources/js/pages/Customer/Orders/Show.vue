@@ -34,9 +34,9 @@ async function load(): Promise<void> {
     error.value = null;
 
     try {
-        order.value = await api.get<{ data: Order }>(`/orders/${props.orderId}`).then(
-            (response) => response.data,
-        );
+        order.value = await api
+            .get<{ data: Order }>(`/orders/${props.orderId}`)
+            .then((response) => response.data);
     } catch (caught) {
         error.value = errorMessage(caught);
     } finally {
@@ -79,15 +79,19 @@ onMounted(() => void load());
 
         <p
             v-if="error"
-            class="mt-6 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            class="mt-6 rounded border border-[#f0c4c4] bg-[#fae9e9] px-4 py-3 text-sm text-[#7a1f1f]"
             role="alert"
         >
             {{ error }}
         </p>
 
         <div v-if="loading" class="mt-6 space-y-4" aria-busy="true">
-            <div class="h-32 animate-pulse rounded border border-mori-line bg-mori-cream/60" />
-            <div class="h-64 animate-pulse rounded border border-mori-line bg-mori-cream/60" />
+            <div
+                class="h-32 animate-pulse rounded border border-mori-line bg-mori-cream/60"
+            />
+            <div
+                class="h-64 animate-pulse rounded border border-mori-line bg-mori-cream/60"
+            />
         </div>
 
         <EmptyState
@@ -100,7 +104,9 @@ onMounted(() => void load());
         </EmptyState>
 
         <template v-else>
-            <header class="mt-4 flex flex-wrap items-start justify-between gap-4">
+            <header
+                class="mt-4 flex flex-wrap items-start justify-between gap-4"
+            >
                 <div>
                     <div class="flex flex-wrap items-center gap-2">
                         <h1 class="mori-heading text-3xl text-mori-ink">
@@ -110,8 +116,8 @@ onMounted(() => void load());
                         <StatusBadge :status="order.payment_status" />
                     </div>
                     <p class="mt-2 text-sm text-mori-muted">
-                        {{ statusLabel(order.order_type) }} ·
-                        placed {{ formatDateTime(order.created_at) }}
+                        {{ statusLabel(order.order_type) }} · placed
+                        {{ formatDateTime(order.created_at) }}
                     </p>
                 </div>
 
@@ -137,8 +143,12 @@ onMounted(() => void load());
 
             <div class="mt-8 grid gap-6 lg:grid-cols-[1fr_340px]">
                 <div class="space-y-6">
-                    <section class="rounded border border-mori-line bg-mori-paper">
-                        <h2 class="border-b border-mori-line px-5 py-3 text-sm font-semibold text-mori-ink">
+                    <section
+                        class="rounded border border-mori-line bg-mori-paper"
+                    >
+                        <h2
+                            class="border-b border-mori-line px-5 py-3 text-sm font-semibold text-mori-ink"
+                        >
                             Items
                         </h2>
                         <ul class="divide-y divide-mori-line/70">
@@ -148,7 +158,9 @@ onMounted(() => void load());
                                 class="flex justify-between gap-4 px-5 py-3"
                             >
                                 <div class="min-w-0">
-                                    <p class="text-sm font-medium text-mori-ink">
+                                    <p
+                                        class="text-sm font-medium text-mori-ink"
+                                    >
                                         {{ item.quantity }} × {{ item.name }}
                                     </p>
                                     <p
@@ -157,11 +169,33 @@ onMounted(() => void load());
                                     >
                                         {{ item.note }}
                                     </p>
+                                    <ul
+                                        v-if="
+                                            item.selected_customizations?.length
+                                        "
+                                        class="mt-1 space-y-0.5 text-xs text-mori-muted"
+                                    >
+                                        <li
+                                            v-for="group in item.selected_customizations"
+                                            :key="group.group_id"
+                                        >
+                                            {{ group.group_name }}:
+                                            {{
+                                                group.options
+                                                    .map(
+                                                        (option) => option.name,
+                                                    )
+                                                    .join(', ')
+                                            }}
+                                        </li>
+                                    </ul>
                                     <p class="mt-0.5 text-xs text-mori-muted">
                                         {{ formatMoney(item.unit_price) }} each
                                     </p>
                                 </div>
-                                <span class="text-sm whitespace-nowrap text-mori-ink">
+                                <span
+                                    class="text-sm whitespace-nowrap text-mori-ink"
+                                >
                                     {{ formatMoney(item.line_total) }}
                                 </span>
                             </li>
@@ -183,7 +217,8 @@ onMounted(() => void load());
                             {{ order.delivery.address_line }}
                         </p>
                         <p class="mt-2 text-xs text-mori-muted">
-                            Status: {{ statusLabel(order.delivery.delivery_status) }}
+                            Status:
+                            {{ statusLabel(order.delivery.delivery_status) }}
                         </p>
                     </section>
 
@@ -201,21 +236,27 @@ onMounted(() => void load());
                 </div>
 
                 <aside class="space-y-6">
-                    <section class="rounded border border-mori-line bg-mori-paper p-5">
+                    <section
+                        class="rounded border border-mori-line bg-mori-paper p-5"
+                    >
                         <h2 class="text-sm font-semibold text-mori-ink">
                             Totals
                         </h2>
                         <dl class="mt-3 space-y-2 text-sm">
                             <div class="flex justify-between">
                                 <dt class="text-mori-muted">Subtotal</dt>
-                                <dd>{{ formatMoney(order.totals.subtotal) }}</dd>
+                                <dd>
+                                    {{ formatMoney(order.totals.subtotal) }}
+                                </dd>
                             </div>
                             <div
                                 v-if="Number(order.totals.delivery_fee) > 0"
                                 class="flex justify-between"
                             >
                                 <dt class="text-mori-muted">Delivery</dt>
-                                <dd>{{ formatMoney(order.totals.delivery_fee) }}</dd>
+                                <dd>
+                                    {{ formatMoney(order.totals.delivery_fee) }}
+                                </dd>
                             </div>
                             <div
                                 v-if="Number(order.totals.tax) > 0"
@@ -229,7 +270,9 @@ onMounted(() => void load());
                                 class="flex justify-between"
                             >
                                 <dt class="text-mori-muted">Discount</dt>
-                                <dd>−{{ formatMoney(order.totals.discount) }}</dd>
+                                <dd>
+                                    −{{ formatMoney(order.totals.discount) }}
+                                </dd>
                             </div>
                             <div
                                 class="flex justify-between border-t border-mori-line pt-3 text-base font-semibold"

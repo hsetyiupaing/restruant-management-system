@@ -36,7 +36,10 @@ export type Restaurant = {
     slug: string;
     phone: string | null;
     address: string | null;
-    opening_hours: Record<string, { open?: string; close?: string } | null> | null;
+    opening_hours: Record<
+        string,
+        { open?: string; close?: string } | null
+    > | null;
     is_active: boolean;
     settings: RestaurantSettings;
     created_at?: string | null;
@@ -49,18 +52,93 @@ export type Category = {
     menu_items_count?: number;
 };
 
+export type MenuCourse = 'STARTER' | 'MAIN' | 'DESSERT';
+
+export type DietaryTag = {
+    id: number;
+    name: string;
+    slug: string;
+    description: string | null;
+};
+
+/**
+ * The dietary classifications the menu may filter by. Allergy and
+ * intolerance information lives in `MenuItem.allergens`, not here.
+ */
+export type DietarySlug = 'vegetarian' | 'vegan' | 'keto';
+
+export type Allergen = {
+    value: string;
+    label: string;
+};
+
+export type MenuCustomizationMode = 'addons' | 'radio' | 'checkbox';
+
+export type MenuCustomizationOption = {
+    id: string;
+    name: string;
+    price: string | number;
+};
+
+export type MenuCustomizationGroup = {
+    id: string;
+    name: string;
+    type: MenuCustomizationMode;
+    options: MenuCustomizationOption[];
+};
+
+export type SelectedMenuOption = {
+    id: string;
+    name: string;
+    price: string;
+};
+
+export type SelectedMenuCustomization = {
+    groupId: string;
+    groupName: string;
+    options: SelectedMenuOption[];
+};
+
+/**
+ * The only dietary filters the menu offers. Allergens and medical
+ * restrictions are deliberately not filters; they appear on the dish page.
+ */
+export const dietaryFilters: { value: DietarySlug; label: string }[] = [
+    { value: 'vegetarian', label: 'Vegetarian' },
+    { value: 'vegan', label: 'Vegan' },
+    { value: 'keto', label: 'Keto' },
+];
+
 export type MenuItem = {
     id: number;
     restaurant_id: number;
     category_id: number;
     category?: { id: number; name: string };
     name: string;
+    slug: string | null;
+    course: MenuCourse | null;
     description: string | null;
+    /** Null when the kitchen has not recorded the ingredients. */
+    ingredients: string | null;
+    /**
+     * Empty means none of the tracked groups appear in the recorded recipe;
+     * null means the kitchen has not recorded allergens. Neither is a claim
+     * that the dish is safe for a particular allergy.
+     */
+    allergens: Allergen[] | null;
     price: string;
     image_url: string | null;
+    customization_groups?: MenuCustomizationGroup[];
     is_available: boolean;
     is_featured: boolean;
+    dietary_tags?: DietaryTag[];
 };
+
+export const menuCourses: { value: MenuCourse; label: string }[] = [
+    { value: 'STARTER', label: 'Starter' },
+    { value: 'MAIN', label: 'Main' },
+    { value: 'DESSERT', label: 'Dessert' },
+];
 
 export type OrderType = 'PICKUP' | 'DELIVERY';
 
@@ -95,6 +173,12 @@ export type OrderItem = {
     quantity: number;
     line_total: string;
     note: string | null;
+    selected_customizations?: {
+        group_id: string;
+        group_name: string;
+        type: MenuCustomizationMode;
+        options: SelectedMenuOption[];
+    }[];
 };
 
 export type OrderPayment = {
@@ -127,7 +211,12 @@ export type DeliveryDetail = {
     address_line: string;
     latitude: string | null;
     longitude: string | null;
-    delivery_status: 'UNASSIGNED' | 'ASSIGNED' | 'PICKED_UP' | 'DELIVERED' | 'FAILED';
+    delivery_status:
+        | 'UNASSIGNED'
+        | 'ASSIGNED'
+        | 'PICKED_UP'
+        | 'DELIVERED'
+        | 'FAILED';
     assigned_at: string | null;
     picked_up_at: string | null;
     delivered_at: string | null;
@@ -166,6 +255,16 @@ export type Order = {
     updated_at: string;
 };
 
+/** The floor-plan canvas every table coordinate is expressed in. */
+export const FLOOR_PLAN_WIDTH = 800;
+export const FLOOR_PLAN_HEIGHT = 520;
+
+/**
+ * `available` can be selected; `taken` and `seated` are already booked;
+ * `unavailable` is free but too small for the party.
+ */
+export type TableStatus = 'available' | 'taken' | 'seated' | 'unavailable';
+
 export type DiningTable = {
     id: number;
     label: string;
@@ -174,7 +273,9 @@ export type DiningTable = {
     shape: 'ROUND' | 'SQUARE' | 'RECT';
     pos_x: number;
     pos_y: number;
-    status?: 'AVAILABLE' | 'RESERVED' | 'OCCUPIED' | 'UNAVAILABLE';
+    width: number;
+    height: number;
+    status?: TableStatus;
     fits_party?: boolean;
     is_active?: boolean;
 };
@@ -198,8 +299,20 @@ export type Reservation = {
     hold_expires_at: string | null;
     special_request: string | null;
     restaurant?: { id: number; name: string; slug: string };
-    table?: { id: number; label: string; capacity: number; shape: string; pos_x: number; pos_y: number };
-    customer?: { id: number; name: string; email: string; no_show_count: number } | null;
+    table?: {
+        id: number;
+        label: string;
+        capacity: number;
+        shape: string;
+        pos_x: number;
+        pos_y: number;
+    };
+    customer?: {
+        id: number;
+        name: string;
+        email: string;
+        no_show_count: number;
+    } | null;
     created_at: string;
 };
 
@@ -241,11 +354,92 @@ export type RestaurantMember = {
     created_at: string | null;
 };
 
+/**
+ * A saved allergy, dietary restriction or dietary preference. The three kinds
+ * are never mixed in the UI: a peanut allergy is not a lifestyle choice.
+ */
+export type FoodRestrictionKind =
+    | 'ALLERGY'
+    | 'DIETARY_RESTRICTION'
+    | 'DIETARY_PREFERENCE';
+
+export type FoodRestrictionEntry = {
+    restriction: string;
+    kind: FoodRestrictionKind;
+    label: string;
+    custom_label: string | null;
+    requires_custom_label: boolean;
+    /** The allergen group this should be compared with, when there is one. */
+    allergen: string | null;
+    /** The menu dietary classification this maps to, when there is one. */
+    dietary_tag: string | null;
+};
+
+export type FoodRestrictionOption = {
+    value: string;
+    label: string;
+    requires_custom_label: boolean;
+};
+
+export type FoodRestrictionCatalog = {
+    allergies: FoodRestrictionOption[];
+    dietary_restrictions: FoodRestrictionOption[];
+    dietary_preferences: FoodRestrictionOption[];
+};
+
+/** The wire shape the API and Fortify registration accept. */
+export type FoodRestrictionInput = {
+    restriction: string;
+    custom_label: string | null;
+};
+
+export type UserRole = 'CUSTOMER' | 'STAFF' | 'ADMIN' | 'SUPER_ADMIN';
+
+/** A platform account as returned by the Super Admin user API. */
+export type PlatformUser = {
+    id: number;
+    name: string;
+    email: string;
+    phone: string | null;
+    email_verified: boolean;
+    role: UserRole;
+    no_show_count: number;
+    created_at: string | null;
+};
+
+export const userRoles: { value: UserRole; label: string; hint: string }[] = [
+    {
+        value: 'CUSTOMER',
+        label: 'Customer',
+        hint: 'Storefront, own orders and dietary restrictions.',
+    },
+    {
+        value: 'STAFF',
+        label: 'Staff',
+        hint: 'Operational tasks for a restaurant they belong to.',
+    },
+    {
+        value: 'ADMIN',
+        label: 'Administrator',
+        hint: 'Manages a restaurant, its menu and its staff.',
+    },
+    {
+        value: 'SUPER_ADMIN',
+        label: 'Super Admin',
+        hint: 'Full access, including platform accounts and roles.',
+    },
+];
+
+export function userRoleLabel(role: UserRole): string {
+    return userRoles.find((option) => option.value === role)?.label ?? role;
+}
+
 export type AuthUser = {
     id: number;
     name: string;
     email: string;
-    role: 'CUSTOMER' | 'STAFF' | 'ADMIN' | 'SUPER_ADMIN';
+    phone?: string | null;
+    role: UserRole;
     memberships?: {
         restaurant_id: number;
         restaurant_name: string | null;
@@ -261,4 +455,5 @@ export type CartLine = {
     quantity: number;
     note: string;
     imageUrl: string | null;
+    selectedOptions?: SelectedMenuCustomization[];
 };

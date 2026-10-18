@@ -7,7 +7,15 @@ const props = defineProps<{
     status: string;
 }>();
 
-type Tone = 'neutral' | 'wine' | 'sage' | 'sand' | 'amber' | 'blue' | 'green' | 'red';
+type Tone =
+    | 'neutral'
+    | 'wine'
+    | 'sage'
+    | 'sand'
+    | 'amber'
+    | 'blue'
+    | 'green'
+    | 'red';
 
 const tones: Record<string, Tone> = {
     PLACED: 'blue',

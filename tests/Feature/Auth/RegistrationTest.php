@@ -21,5 +21,7 @@ test('new users can register', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    // A new account is a customer, so it is sent to its own orders rather than
+    // the back office, which would answer 403.
+    $response->assertRedirect('/orders');
 });

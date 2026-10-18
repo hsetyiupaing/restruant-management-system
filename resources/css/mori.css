@@ -1,43 +1,71 @@
 /*
-  MORI storefront tokens.
+  MORI theme tokens.
 
-  These sit alongside the starter kit's shadcn tokens. They are scoped to the
-  customer-facing layout so the back office keeps its neutral admin palette.
+  One palette for the whole product:
+
+    Background            White        #FFFFFF  --mori-paper
+    Surface (alternates)  Soft Linen   #F7F4EE  --mori-cream
+    Primary text          Ink Black    #1A1A1C  --mori-ink
+    Secondary text        Warm Grey    #6F6A62  --mori-muted
+    Accent                Muted Brass  #A8844C  --mori-brass
+    Secondary accent      Deep Burgundy#5A1F2B  --mori-wine
+    Lines and dividers    Pale Stone   #E4DFD5  --mori-line
+
+  Two derived tokens exist because the palette values above cannot carry the
+  state they are used for:
+
+    --mori-brass-ink  #8A6835  brass as text or as a button fill (4.65:1 on
+                               linen, 5.11:1 on white; #A8844C is only 3.15:1)
+    --mori-field      #8A8377  form-control border (3.75:1 on white, 3.42:1 on
+                               linen; --mori-line is 1.21:1 and reads as an
+                               invisible box)
+
+  Everything is light-locked on purpose: the storefront and back office are
+  painted light, so `color-scheme: light` stops the OS dark preference from
+  turning native selects, date pickers and scrollbars black underneath a white
+  card. That mismatch was what made dialog and card text disappear.
 */
 
 @theme inline {
     --font-display: 'Playfair Display', ui-serif, Georgia, serif;
     --font-body: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
 
-    --color-mori-ink: #22201d;
-    --color-mori-muted: #716c65;
-    --color-mori-wine: #8d302e;
-    --color-mori-wine-hover: #702522;
-    --color-mori-cream: #f6f1e8;
-    --color-mori-paper: #fffdf9;
-    --color-mori-line: #e7e0d6;
-    --color-mori-sage: #526b54;
+    --color-mori-paper: #ffffff;
+    --color-mori-cream: #f7f4ee;
+    --color-mori-ink: #1a1a1c;
+    --color-mori-muted: #6f6a62;
+    --color-mori-brass: #a8844c;
+    --color-mori-brass-ink: #8a6835;
+    --color-mori-wine: #5a1f2b;
+    --color-mori-wine-hover: #451720;
+    --color-mori-line: #e4dfd5;
+    --color-mori-field: #8a8377;
+    --color-mori-sage: #3f5c42;
     --color-mori-sand: #d8c6a9;
-    --color-admin-bg: #f5f6f3;
-    --color-admin-sidebar: #1c211c;
+    --color-admin-bg: #f7f4ee;
+    --color-admin-sidebar: #5a1f2b;
 }
 
 /* Customer shell */
 .mori-shell {
-    --mori-ink: #22201d;
-    --mori-muted: #716c65;
-    --mori-wine: #8d302e;
-    --mori-wine-hover: #702522;
-    --mori-cream: #f6f1e8;
-    --mori-paper: #fffdf9;
-    --mori-line: #e7e0d6;
-    --mori-sage: #526b54;
+    --mori-paper: #ffffff;
+    --mori-cream: #f7f4ee;
+    --mori-ink: #1a1a1c;
+    --mori-muted: #6f6a62;
+    --mori-brass: #a8844c;
+    --mori-brass-ink: #8a6835;
+    --mori-wine: #5a1f2b;
+    --mori-wine-hover: #451720;
+    --mori-line: #e4dfd5;
+    --mori-field: #8a8377;
+    --mori-sage: #3f5c42;
     --mori-sand: #d8c6a9;
 
     min-height: 100vh;
     background: var(--mori-paper);
     color: var(--mori-ink);
     font-family: var(--font-body);
+    color-scheme: light;
 }
 
 .mori-container {
@@ -51,22 +79,463 @@
     font-family: var(--font-display);
     font-weight: 600;
     letter-spacing: -0.01em;
+    color: inherit;
 }
 
-/* Admin shell */
+/*
+  Admin shell.
+
+  The back office reads like a Power BI report: a soft linen page, white cards
+  on pale stone rules, a deep burgundy rail and a brass accent. Tokens are
+  redeclared here so the shell stays light even when the OS is in dark mode —
+  otherwise `text-mori-ink` on a dark card is invisible.
+*/
 .admin-shell {
-    --admin-bg: #f5f6f3;
-    --admin-sidebar: #1c211c;
-    --admin-line: #e3e5df;
+    --admin-bg: #f7f4ee;
+    --admin-sidebar: #5a1f2b;
+    --admin-line: #e4dfd5;
+    --admin-topbar-height: 7.5rem;
 
     min-height: 100vh;
     background: var(--admin-bg);
-    color: var(--mori-ink, #22201d);
+    color: var(--mori-ink);
     font-family: var(--font-body);
+    color-scheme: light;
 }
 
 .admin-sidebar {
     width: 230px;
     background: var(--admin-sidebar);
-    color: #f2efe8;
+    color: #ffffff;
+}
+
+@media (min-width: 768px) {
+    .admin-shell {
+        --admin-topbar-height: 5.25rem;
+    }
+}
+
+.admin-filter-bar {
+    position: sticky;
+    top: var(--admin-topbar-height);
+    z-index: 30;
+    box-shadow: 0 8px 16px -16px rgb(26 26 28 / 60%);
+}
+
+/*
+  Form controls.
+
+  `--mori-field` is what makes an empty text box legible on a white card: the
+  palette's `--mori-line` separator is far too faint to outline a control. The
+  shadcn Input/Textarea and every native <select> in the app use this class.
+*/
+.mori-field {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid var(--mori-field);
+    border-radius: 8px;
+    background-color: var(--mori-paper);
+    color: var(--mori-ink);
+    font-family: inherit;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    box-shadow: none;
+    outline: none;
+    transition:
+        border-color 120ms ease,
+        box-shadow 120ms ease;
+}
+
+.mori-dialog .mori-field {
+    border-color: #777064;
+    background-color: #ffffff;
+    color: #1a1a1c;
+}
+
+.mori-field::placeholder {
+    color: var(--mori-muted);
+    opacity: 1;
+}
+
+.mori-field:hover:not(:disabled) {
+    border-color: var(--mori-muted);
+}
+
+.mori-field:focus,
+.mori-field:focus-visible {
+    border-color: var(--mori-wine);
+    box-shadow:
+        0 0 0 2px var(--mori-paper),
+        0 0 0 4px var(--mori-wine);
+    outline: none;
+}
+
+.mori-field:disabled {
+    background-color: var(--mori-cream);
+    color: var(--mori-muted);
+    cursor: not-allowed;
+}
+
+.mori-field[aria-invalid='true'] {
+    border-color: #8c2f2f;
+}
+
+select.mori-field {
+    appearance: none;
+    padding-right: 2.25rem;
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--mori-muted) 50%),
+        linear-gradient(135deg, var(--mori-muted) 50%, transparent 50%);
+    background-position:
+        calc(100% - 1.05rem) calc(50% - 2px),
+        calc(100% - 0.7rem) calc(50% - 2px);
+    background-size:
+        5px 5px,
+        5px 5px;
+    background-repeat: no-repeat;
+    cursor: pointer;
+}
+
+.mori-field-label {
+    color: var(--mori-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
+/* --- Power BI style report surfaces ------------------------------------ */
+
+.report-card {
+    background-color: var(--mori-paper);
+    border: 1px solid var(--mori-line);
+    border-radius: 10px;
+    box-shadow: 0 1px 2px rgb(26 26 28 / 4%);
+}
+
+.report-card-title {
+    color: var(--mori-ink);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.report-caption {
+    color: var(--mori-muted);
+    font-size: 0.75rem;
+}
+
+.kpi-tile {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--mori-paper);
+    border: 1px solid var(--mori-line);
+    border-radius: 10px;
+    box-shadow: 0 1px 2px rgb(26 26 28 / 4%);
+}
+
+.kpi-tile::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background-color: var(--mori-brass);
+}
+
+.kpi-tile.is-primary::before {
+    background-color: var(--mori-wine);
+}
+
+.kpi-label {
+    color: var(--mori-muted);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.kpi-value {
+    color: var(--mori-ink);
+    font-family: var(--font-display);
+    font-size: 1.625rem;
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+}
+
+.kpi-hint {
+    color: var(--mori-muted);
+    font-size: 0.75rem;
+}
+
+/* Chart furniture */
+.chart-gridline {
+    border-top: 1px dashed var(--mori-line);
+}
+
+.chart-axis-label {
+    color: var(--mori-muted);
+    font-size: 0.6875rem;
+    font-variant-numeric: tabular-nums;
+}
+
+/*
+  Reserve page ("Book a table").
+
+  Kept as its own scope because the floor plan carries state colours that the
+  global palette does not: a table is available, taken, seated or too small,
+  and each needs a fill/stroke pair that still reads at 4.5:1.
+*/
+.reserve-page {
+    --table-available-fill: #dce8d8;
+    --table-available-stroke: #3f5c42;
+    --table-available-text: #22391f;
+    --table-hover-fill: #c8dcc2;
+    --table-taken-fill: #f1ece3;
+    --table-taken-stroke: #8a8377;
+    --table-taken-text: #6f6a62;
+    --table-seated-fill: #1a1a1c;
+    --table-seated-text: #ffffff;
+    --table-selected-fill: #5a1f2b;
+    --table-selected-stroke: #451720;
+    --table-selected-text: #ffffff;
+
+    color: var(--mori-ink);
+}
+
+/* --- Reserve form controls ---------------------------------------------- */
+
+.reserve-page input.mori-field,
+.reserve-page select.mori-field {
+    height: 48px;
+    padding: 0 0.875rem;
+}
+
+.reserve-page textarea.mori-field {
+    min-height: 48px;
+    padding: 0.75rem 0.875rem;
+    resize: vertical;
+}
+
+.reserve-page .mori-field-label {
+    font-size: 0.8125rem;
+    letter-spacing: 0;
+}
+
+/* --- Reserve button ----------------------------------------------------- */
+
+.reserve-page .reserve-submit {
+    width: 100%;
+    height: 48px;
+}
+
+.reserve-page .reserve-submit:enabled {
+    background-color: var(--mori-wine);
+    color: var(--table-selected-text);
+}
+
+.reserve-page .reserve-submit:enabled:hover {
+    background-color: var(--mori-wine-hover);
+}
+
+/*
+  AppButton fades disabled controls to `opacity-50`, which over burgundy reads
+  as washed-out pink. A disabled button should look like an empty slot instead:
+  warm neutral, muted label, no pointer.
+*/
+.reserve-page .reserve-submit:disabled {
+    background-color: #ede9e1;
+    color: var(--mori-muted);
+    opacity: 1;
+    cursor: not-allowed;
+    border: 1px solid var(--mori-line);
+}
+
+/* While the booking is in flight the button is still the active action. */
+.reserve-page .reserve-submit:disabled:has(.animate-spin) {
+    background-color: var(--mori-wine);
+    color: var(--table-selected-text);
+    border-color: var(--mori-wine);
+    cursor: progress;
+}
+
+/* --- Floor plan --------------------------------------------------------- */
+
+.reserve-page .floor-plan {
+    display: block;
+    width: 100%;
+    border: 1px solid var(--mori-line);
+    border-radius: 10px;
+    background-color: var(--mori-cream);
+}
+
+.reserve-page .floor-plan-table rect {
+    transition:
+        fill 120ms ease,
+        stroke 120ms ease,
+        stroke-width 120ms ease;
+}
+
+.reserve-page .floor-plan-table.is-selectable {
+    cursor: pointer;
+    outline: none;
+}
+
+.reserve-page .floor-plan-table.is-selectable:hover > rect {
+    fill: var(--table-hover-fill);
+    stroke-width: 3;
+}
+
+.reserve-page .floor-plan-table.is-selectable:focus-visible > rect {
+    stroke: var(--table-selected-stroke);
+    stroke-width: 3;
+}
+
+/* Available */
+.reserve-page .floor-plan-table.is-available > rect {
+    fill: var(--table-available-fill);
+    stroke: var(--table-available-stroke);
+    stroke-width: 2;
+}
+
+.reserve-page .floor-plan-table.is-available > .floor-plan-label {
+    fill: var(--table-available-text);
+}
+
+/* Too small for the party: still free, but visibly not bookable. */
+.reserve-page .floor-plan-table.is-unavailable {
+    opacity: 0.6;
+}
+
+.reserve-page .floor-plan-table.is-unavailable > rect {
+    fill: var(--table-taken-fill);
+    stroke: var(--table-taken-stroke);
+    stroke-width: 2;
+    stroke-dasharray: 7 5;
+}
+
+.reserve-page .floor-plan-table.is-unavailable > .floor-plan-label {
+    fill: var(--table-taken-text);
+}
+
+/* Already booked for this slot. */
+.reserve-page .floor-plan-table.is-taken > rect {
+    fill: var(--table-taken-fill);
+    stroke: var(--table-taken-stroke);
+    stroke-width: 2;
+    stroke-dasharray: 7 5;
+}
+
+.reserve-page .floor-plan-table.is-taken > .floor-plan-label {
+    fill: var(--table-taken-text);
+}
+
+/* Occupied right now. */
+.reserve-page .floor-plan-table.is-seated > rect {
+    fill: var(--table-seated-fill);
+    stroke: var(--table-seated-fill);
+    stroke-width: 2;
+}
+
+.reserve-page .floor-plan-table.is-seated > .floor-plan-label {
+    fill: var(--table-seated-text);
+}
+
+/* Picked by this visitor; matches the Reserve button exactly. */
+.reserve-page .floor-plan-table.is-selected > rect {
+    fill: var(--table-selected-fill);
+    stroke: var(--table-selected-stroke);
+    stroke-width: 3;
+}
+
+.reserve-page .floor-plan-table.is-selected > .floor-plan-label {
+    fill: var(--table-selected-text);
+}
+
+.reserve-page .floor-plan-label {
+    font-family: var(--font-body);
+    text-anchor: middle;
+    dominant-baseline: middle;
+    pointer-events: none;
+}
+
+.reserve-page .floor-plan-label.is-number {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.reserve-page .floor-plan-label.is-seats {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.reserve-page .floor-plan-room {
+    fill: var(--mori-paper);
+    stroke: var(--mori-muted);
+    stroke-width: 1.5;
+    stroke-dasharray: 6 5;
+}
+
+.reserve-page .floor-plan-room-label {
+    fill: var(--mori-muted);
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-anchor: middle;
+    dominant-baseline: middle;
+}
+
+/* --- Legend ------------------------------------------------------------- */
+
+.reserve-page .legend-swatch {
+    display: block;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    border-radius: 4px;
+    border: 2px solid transparent;
+}
+
+.reserve-page .legend-swatch.is-available {
+    background-color: var(--table-available-fill);
+    border-color: var(--table-available-stroke);
+}
+
+.reserve-page .legend-swatch.is-selected {
+    background-color: var(--table-selected-fill);
+    border-color: var(--table-selected-stroke);
+}
+
+.reserve-page .legend-swatch.is-taken {
+    background-color: var(--table-taken-fill);
+    border-color: var(--table-taken-stroke);
+    border-style: dashed;
+}
+
+.reserve-page .legend-swatch.is-seated {
+    background-color: var(--table-seated-fill);
+    border-color: var(--table-seated-fill);
+}
+
+.reserve-page .legend-label {
+    color: var(--mori-muted);
+    font-size: 0.75rem;
+}
+
+/*
+  Dialogs are portalled to <body>, outside the shell that owns the tokens, so
+  they get the palette and a light `color-scheme` explicitly. Without this a
+  dark OS preference turned the dialog black while the title stayed ink black.
+*/
+.mori-dialog {
+    --mori-paper: #ffffff;
+    --mori-cream: #f7f4ee;
+    --mori-ink: #1a1a1c;
+    --mori-muted: #6f6a62;
+    --mori-line: #e4dfd5;
+    --mori-field: #8a8377;
+
+    background-color: var(--mori-paper);
+    color: var(--mori-ink);
+    border-color: var(--mori-line);
+    color-scheme: light;
 }

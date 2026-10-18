@@ -20,9 +20,11 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
+            'phone' => $this->phone,
             'email_verified' => $this->email_verified_at !== null,
             'role' => $this->role->value,
             'no_show_count' => $this->no_show_count,
+            'food_restrictions' => FoodRestrictionResource::collection($this->whenLoaded('foodRestrictions')),
             'memberships' => $this->whenLoaded('memberships', fn () => $this->memberships->map(fn ($member): array => [
                 'restaurant_id' => $member->restaurant_id,
                 'restaurant_name' => $member->relationLoaded('restaurant') ? $member->restaurant?->name : null,
