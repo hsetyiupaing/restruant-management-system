@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { Head } from '@inertiajs/vue3';
-import { Pencil, Plus, Trash2 } from '@lucide/vue';
+import { Bookmark, Pencil, Plus, Trash2 } from '@lucide/vue';
 import { toast } from 'vue-sonner';
 import AdminTopbar from '@/components/admin/AdminTopbar.vue';
 import AppButton from '@/components/mori/AppButton.vue';
@@ -56,6 +56,9 @@ const columns = [
 const rows = computed(
     () => items.value as unknown as Record<string, unknown>[],
 );
+
+let searchTimer: number | undefined;
+let latestItemsRequest = 0;
 
 function categoryName(row: Record<string, unknown>): string {
     return (row.category as { name?: string } | undefined)?.name ?? '—';
@@ -394,6 +397,7 @@ async function loadDietaryTags(): Promise<void> {
 }
 
 async function loadItems(): Promise<void> {
+    const requestId = ++latestItemsRequest;
     loading.value = true;
     error.value = null;
 
@@ -410,14 +414,33 @@ async function loadItems(): Promise<void> {
             },
         );
 
-        items.value = response.data;
-        meta.value = response.meta;
+        if (requestId === latestItemsRequest) {
+            items.value = response.data;
+            meta.value = response.meta;
+        }
     } catch (caught) {
-        error.value = errorMessage(caught);
+        if (requestId === latestItemsRequest) {
+            error.value = errorMessage(caught);
+        }
     } finally {
-        loading.value = false;
+        if (requestId === latestItemsRequest) {
+            loading.value = false;
+        }
     }
 }
+
+watch(
+    () => filters.search,
+    () => {
+        window.clearTimeout(searchTimer);
+        searchTimer = window.setTimeout(() => {
+            filters.page = 1;
+            void loadItems();
+        }, 250);
+    },
+);
+
+onUnmounted(() => window.clearTimeout(searchTimer));
 
 onMounted(() => {
     void loadCategories();
@@ -537,10 +560,6 @@ onMounted(() => {
                             v-model="filters.search"
                             type="search"
                             placeholder="Dish name…"
-                            @keyup.enter="
-                                filters.page = 1;
-                                loadItems();
-                            "
                         />
                     </div>
                     <AppButton
@@ -1088,10 +1107,26 @@ onMounted(() => {
                     <input v-model="itemForm.is_available" type="checkbox" />
                     Available to order
                 </label>
-                <label class="flex items-center gap-2 text-sm text-mori-ink">
-                    <input v-model="itemForm.is_featured" type="checkbox" />
-                    Feature on the storefront
-                </label>
+                <div
+                    class="space-y-1.5 rounded border border-mori-line bg-mori-cream/40 p-3 sm:col-span-2"
+                >
+                    <label
+                        class="flex cursor-pointer items-center gap-2 text-sm font-medium text-mori-ink"
+                    >
+                        <input v-model="itemForm.is_featured" type="checkbox" />
+                        <Bookmark
+                            class="size-4 text-mori-brass-ink"
+                            :class="{ 'fill-mori-brass': itemForm.is_featured }"
+                            aria-hidden="true"
+                        />
+                        Signature dish
+                    </label>
+                    <p class="pl-6 text-sm text-mori-muted">
+                        Appears in the home page Signature list. Up to six
+                        dishes can be featured; adding another replaces the
+                        oldest.
+                    </p>
+                </div>
             </div>
             <template #footer>
                 <AppButton variant="outline" @click="itemOpen = false">

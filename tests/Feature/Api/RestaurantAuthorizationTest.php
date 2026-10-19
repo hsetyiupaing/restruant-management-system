@@ -105,6 +105,49 @@ test('restaurant admins can create categories and menu items scoped to their res
         ->assertJsonPath('data.category.name', 'Starters');
 });
 
+test('adding a seventh signature replaces the oldest signature for that restaurant', function () {
+    $restaurant = Restaurant::factory()->create();
+    $category = Category::factory()->for($restaurant)->create();
+    $admin = User::factory()->create();
+    RestaurantMember::factory()->for($restaurant)->for($admin)->admin()->create();
+
+    $signatures = collect(range(0, 5))->map(fn (int $index): MenuItem => MenuItem::factory()
+        ->for($restaurant)
+        ->for($category)
+        ->featured()
+        ->create([
+            'created_at' => now()->subDays(6 - $index),
+            'updated_at' => now()->subDays(6 - $index),
+        ]));
+    $oldestSignature = $signatures->first();
+
+    $newSignature = $this->actingAs($admin)
+        ->postJson("/api/v1/admin/restaurants/{$restaurant->id}/menu-items", [
+            'category_id' => $category->id,
+            'name' => 'New Signature Dish',
+            'price' => 18,
+            'is_featured' => true,
+        ])
+        ->assertCreated()
+        ->json('data');
+
+    expect($oldestSignature->fresh()->is_featured)->toBeFalse()
+        ->and($restaurant->menuItems()->where('is_featured', true)->count())->toBe(6)
+        ->and(MenuItem::query()->findOrFail($newSignature['id'])->is_featured)->toBeTrue();
+
+    $nextOldest = $signatures->get(1);
+    $unfeatured = MenuItem::factory()->for($restaurant)->for($category)->create();
+
+    $this->actingAs($admin)
+        ->patchJson("/api/v1/admin/restaurants/{$restaurant->id}/menu-items/{$unfeatured->id}", [
+            'is_featured' => true,
+        ])
+        ->assertOk();
+
+    expect($nextOldest->fresh()->is_featured)->toBeFalse()
+        ->and($restaurant->menuItems()->where('is_featured', true)->count())->toBe(6);
+});
+
 test('restaurant admins can save menu customization groups', function () {
     $restaurant = Restaurant::factory()->create();
     $category = Category::factory()->for($restaurant)->create();

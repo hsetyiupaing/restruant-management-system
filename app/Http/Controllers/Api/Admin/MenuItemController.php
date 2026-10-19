@@ -16,10 +16,13 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class MenuItemController extends Controller
 {
+    private const SIGNATURE_LIMIT = 6;
+
     public function index(Request $request, Restaurant $restaurant): AnonymousResourceCollection
     {
         Gate::authorize('manageMenu', $restaurant);
@@ -63,9 +66,19 @@ class MenuItemController extends Controller
     {
         Gate::authorize('manageMenu', $restaurant);
 
-        $item = $restaurant->menuItems()->create($request->safe()->except('dietary_tags'));
+        $item = DB::transaction(function () use ($request, $restaurant): MenuItem {
+            $this->lockSignatureCollection($restaurant);
 
-        $this->syncDietaryTags($item, $request->validated('dietary_tags'));
+            $item = $restaurant->menuItems()->create($request->safe()->except('dietary_tags'));
+
+            if ($item->is_featured) {
+                $this->enforceSignatureLimit($restaurant, $item);
+            }
+
+            $this->syncDietaryTags($item, $request->validated('dietary_tags'));
+
+            return $item;
+        });
 
         return new MenuItemResource($item->load(['category', 'dietaryTags']));
     }
@@ -85,11 +98,26 @@ class MenuItemController extends Controller
 
         abort_unless($menuItem->restaurant_id === $restaurant->id, 404);
 
-        $menuItem->update($request->safe()->except('dietary_tags'));
+        $menuItem = DB::transaction(function () use ($request, $restaurant, $menuItem): MenuItem {
+            $this->lockSignatureCollection($restaurant);
 
-        if ($request->has('dietary_tags')) {
-            $this->syncDietaryTags($menuItem, $request->validated('dietary_tags'));
-        }
+            $menuItem = $restaurant->menuItems()
+                ->whereKey($menuItem->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $menuItem->update($request->safe()->except('dietary_tags'));
+
+            if ($menuItem->is_featured) {
+                $this->enforceSignatureLimit($restaurant, $menuItem);
+            }
+
+            if ($request->has('dietary_tags')) {
+                $this->syncDietaryTags($menuItem, $request->validated('dietary_tags'));
+            }
+
+            return $menuItem;
+        });
 
         return new MenuItemResource($menuItem->load(['category', 'dietaryTags']));
     }
@@ -119,6 +147,37 @@ class MenuItemController extends Controller
             ->pluck('id');
 
         $item->dietaryTags()->sync($ids);
+    }
+
+    private function lockSignatureCollection(Restaurant $restaurant): void
+    {
+        Restaurant::query()
+            ->whereKey($restaurant->getKey())
+            ->lockForUpdate()
+            ->firstOrFail();
+    }
+
+    private function enforceSignatureLimit(Restaurant $restaurant, MenuItem $newestSignature): void
+    {
+        $signatureCount = $restaurant->menuItems()
+            ->where('is_featured', true)
+            ->count();
+
+        while ($signatureCount > self::SIGNATURE_LIMIT) {
+            $oldestSignature = $restaurant->menuItems()
+                ->where('is_featured', true)
+                ->whereKeyNot($newestSignature->getKey())
+                ->orderBy('created_at')
+                ->orderBy('id')
+                ->first();
+
+            if ($oldestSignature === null) {
+                return;
+            }
+
+            $oldestSignature->update(['is_featured' => false]);
+            $signatureCount--;
+        }
     }
 
     /**
