@@ -73,7 +73,7 @@ const navigation = computed(() => [
         </div>
 
         <nav
-            class="flex gap-1 overflow-x-auto px-3 pb-2 md:hidden"
+            class="flex gap-1 overflow-x-auto px-3 pb-2 lg:hidden"
             aria-label="Back office"
         >
             <Link

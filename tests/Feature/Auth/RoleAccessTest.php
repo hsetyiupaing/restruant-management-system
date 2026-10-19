@@ -125,27 +125,26 @@ test('a super admin can promote a customer without granting more than requested'
     expect($target->fresh()->role)->toBe(UserRole::Admin);
 });
 
-test('the last super admin cannot be demoted', function () {
+test('a super admin cannot change the last super admin account', function () {
     $super = User::factory()->superAdmin()->create();
 
     $this->actingAs($super)
         ->patchJson("/api/v1/admin/users/{$super->id}/role", ['role' => UserRole::Customer->value])
-        ->assertStatus(422)
-        ->assertJsonValidationErrors('role');
+        ->assertForbidden();
 
     expect($super->fresh()->role)->toBe(UserRole::SuperAdmin);
 });
 
-test('a super admin may be demoted once another super admin exists', function () {
+test('a super admin cannot change another super admin account', function () {
     $actor = User::factory()->superAdmin()->create();
     $other = User::factory()->superAdmin()->create();
     $target = User::factory()->superAdmin()->create();
 
     $this->actingAs($actor)
         ->patchJson("/api/v1/admin/users/{$target->id}/role", ['role' => UserRole::Admin->value])
-        ->assertOk();
+        ->assertForbidden();
 
-    expect($target->fresh()->role)->toBe(UserRole::Admin)
+    expect($target->fresh()->role)->toBe(UserRole::SuperAdmin)
         ->and($other->fresh()->role)->toBe(UserRole::SuperAdmin);
 });
 
@@ -155,7 +154,7 @@ test('a super admin cannot demote their own account', function () {
 
     $this->actingAs($actor)
         ->patchJson("/api/v1/admin/users/{$actor->id}/role", ['role' => UserRole::Admin->value])
-        ->assertStatus(422);
+        ->assertForbidden();
 
     expect($actor->fresh()->role)->toBe(UserRole::SuperAdmin);
 });

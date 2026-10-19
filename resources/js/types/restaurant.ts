@@ -394,6 +394,7 @@ export type FoodRestrictionInput = {
 };
 
 export type UserRole = 'CUSTOMER' | 'STAFF' | 'ADMIN' | 'SUPER_ADMIN';
+export type StaffType = 'CASHIER' | 'KITCHEN' | 'WAITER' | 'DRIVER';
 
 /** A platform account as returned by the Super Admin user API. */
 export type PlatformUser = {
@@ -403,6 +404,7 @@ export type PlatformUser = {
     phone: string | null;
     email_verified: boolean;
     role: UserRole;
+    staff_type: StaffType | null;
     no_show_count: number;
     created_at: string | null;
 };

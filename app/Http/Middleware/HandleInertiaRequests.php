@@ -39,6 +39,9 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'flash' => [
+                'success' => fn (): ?string => $request->session()->get('success'),
+            ],
             'auth' => [
                 'user' => $request->user(),
                 // Saved restrictions travel with every page, so the dish page

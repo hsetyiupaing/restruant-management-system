@@ -215,9 +215,7 @@ onMounted(() => void load());
             </section>
 
             <section class="report-card p-5">
-                <h2 class="report-card-title">
-                    Orders & reservations
-                </h2>
+                <h2 class="report-card-title">Orders & reservations</h2>
 
                 <div class="mt-4 space-y-4">
                     <div class="space-y-1.5">
@@ -296,9 +294,7 @@ onMounted(() => void load());
             <section
                 class="rounded border border-mori-line bg-mori-paper p-5 lg:col-span-2"
             >
-                <h2 class="report-card-title">
-                    Opening hours
-                </h2>
+                <h2 class="report-card-title">Opening hours</h2>
                 <p class="mt-1 text-xs text-mori-muted">
                     Reservations outside these hours are refused by the API.
                 </p>

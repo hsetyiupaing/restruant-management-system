@@ -66,7 +66,7 @@ function isActive(href: string, exact: boolean): boolean {
         which composites to 7.73:1 — well over AA, unlike the previous 50%.
     -->
     <aside
-        class="admin-sidebar sticky top-0 hidden h-screen shrink-0 flex-col md:flex"
+        class="admin-sidebar sticky top-0 hidden h-screen shrink-0 flex-col lg:flex"
     >
         <div class="border-b border-white/15 px-5 py-5">
             <BrandLogo inverse compact />

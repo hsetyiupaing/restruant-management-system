@@ -1,135 +1,225 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
-import { Head, usePage } from '@inertiajs/vue3';
-import { ShieldCheck } from '@lucide/vue';
+import { computed, reactive, ref, watch } from 'vue';
+import { Head, router, usePage } from '@inertiajs/vue3';
+import { LockKeyhole, Pencil, ShieldCheck } from '@lucide/vue';
 import { toast } from 'vue-sonner';
+import AccountAccessController from '@/actions/App/Http/Controllers/Admin/AccountAccessController';
+import DashboardController from '@/actions/App/Http/Controllers/Admin/DashboardController';
 import AdminTopbar from '@/components/admin/AdminTopbar.vue';
-import AppBadge from '@/components/mori/AppBadge.vue';
 import AppButton from '@/components/mori/AppButton.vue';
+import AppModal from '@/components/mori/AppModal.vue';
 import DataTable from '@/components/mori/DataTable.vue';
-import { ApiError, api, errorMessage } from '@/lib/api';
+import PlatformRoleBadge from '@/components/mori/PlatformRoleBadge.vue';
 import { formatDate } from '@/lib/format';
-import { userRoleLabel, userRoles } from '@/types/restaurant';
-import type { Paginated, PlatformUser, UserRole } from '@/types/restaurant';
+import { userRoles } from '@/types/restaurant';
+import type {
+    Paginated,
+    PlatformUser,
+    StaffType,
+    UserRole,
+} from '@/types/restaurant';
+
+type EditableRole = Exclude<UserRole, 'SUPER_ADMIN'>;
 
 const props = defineProps<{
     canAssignRoles: boolean;
+    filters: { search: string; role: string; page: number };
+    users: Paginated<PlatformUser>;
 }>();
 
 const page = usePage();
 const currentUserId = computed(() => page.props.auth?.user?.id ?? null);
-
-const users = ref<PlatformUser[]>([]);
-const meta = ref<Paginated<PlatformUser>['meta'] | null>(null);
-const loading = ref(true);
-const error = ref<string | null>(null);
-const savingId = ref<number | null>(null);
-
-const filters = reactive({
-    role: '' as UserRole | '',
-    search: '',
-    page: 1,
-});
+const rows = computed(
+    () => props.users.data as unknown as Record<string, unknown>[],
+);
+const meta = computed(() => props.users.meta);
+const editableRoles = userRoles.filter(
+    (option): option is (typeof userRoles)[number] & { value: EditableRole } =>
+        option.value !== 'SUPER_ADMIN',
+);
+const staffTypes: { value: StaffType; label: string }[] = [
+    { value: 'CASHIER', label: 'Cashier' },
+    { value: 'KITCHEN', label: 'Kitchen' },
+    { value: 'WAITER', label: 'Waiter' },
+    { value: 'DRIVER', label: 'Driver' },
+];
 
 const columns = [
     { key: 'name', label: 'Account' },
     { key: 'phone', label: 'Phone' },
     { key: 'role', label: 'Role' },
     { key: 'created_at', label: 'Joined' },
-    { key: 'actions', label: '', align: 'right' as const },
 ];
 
-const rows = computed(
-    () => users.value as unknown as Record<string, unknown>[],
+const filters = reactive({
+    role: props.filters.role as UserRole | '',
+    search: props.filters.search,
+    page: props.filters.page,
+});
+const selectedUser = ref<PlatformUser | null>(null);
+const dialogOpen = ref(false);
+const confirmingRemoval = ref(false);
+const saving = ref(false);
+const fieldErrors = ref<Record<string, string>>({});
+const editForm = reactive<{
+    role: EditableRole;
+    staff_type: StaffType | '';
+}>({
+    role: 'CUSTOMER',
+    staff_type: '',
+});
+
+const hasChanges = computed(() => {
+    if (selectedUser.value === null) {
+        return false;
+    }
+
+    return (
+        editForm.role !== selectedUser.value.role ||
+        (editForm.role === 'STAFF' &&
+            (editForm.staff_type || null) !== selectedUser.value.staff_type)
+    );
+});
+
+watch(
+    () => props.filters,
+    (value) => {
+        filters.search = value.search;
+        filters.role = value.role as UserRole | '';
+        filters.page = value.page;
+    },
 );
 
 function asUser(row: Record<string, unknown>): PlatformUser {
     return row as unknown as PlatformUser;
 }
 
-const roleTones: Record<UserRole, 'wine' | 'sage' | 'sand' | 'neutral'> = {
-    SUPER_ADMIN: 'wine',
-    ADMIN: 'sage',
-    STAFF: 'sand',
-    CUSTOMER: 'neutral',
-};
-
-function roleTone(role: UserRole): 'wine' | 'sage' | 'sand' | 'neutral' {
-    return roleTones[role] ?? 'neutral';
-}
-
-/** Only another Super Admin can hand out privileged roles. */
-async function changeRole(user: PlatformUser, event: Event): Promise<void> {
-    const select = event.target as HTMLSelectElement;
-    const role = select.value as UserRole;
-
-    if (role === user.role) {
+function openEditor(user: PlatformUser): void {
+    if (!props.canAssignRoles || user.role === 'SUPER_ADMIN') {
         return;
     }
 
-    savingId.value = user.id;
+    selectedUser.value = user;
+    editForm.role = user.role;
+    editForm.staff_type = user.staff_type ?? '';
+    fieldErrors.value = {};
+    confirmingRemoval.value = false;
+    dialogOpen.value = true;
+}
 
-    try {
-        const updated = await api.patch<{ data: PlatformUser }>(
-            `/admin/users/${user.id}/role`,
-            { role },
-        );
+function closeEditor(): void {
+    if (saving.value) {
+        return;
+    }
 
-        users.value = users.value.map((entry) =>
-            entry.id === updated.data.id ? updated.data : entry,
-        );
-        toast.success(`${updated.data.name} is now ${userRoleLabel(role)}.`);
-    } catch (caught) {
-        // Put the control back where it was so the UI never claims a change
-        // the server refused (e.g. the last Super Admin).
-        select.value = user.role;
+    dialogOpen.value = false;
+    confirmingRemoval.value = false;
+    selectedUser.value = null;
+    fieldErrors.value = {};
+}
 
-        if (caught instanceof ApiError && caught.status === 403) {
-            toast.error('Only a Super Admin can change account roles.');
-        } else {
-            toast.error(errorMessage(caught));
-        }
-    } finally {
-        savingId.value = null;
+function showSuccess(pageProps: Record<string, unknown>): void {
+    const flash = pageProps.flash as { success?: string } | undefined;
+
+    if (flash?.success) {
+        toast.success(flash.success);
     }
 }
 
-async function load(): Promise<void> {
-    loading.value = true;
-    error.value = null;
+function reloadUsers(): void {
+    router.reload({ only: ['users'] });
+}
 
-    try {
-        const response = await api.get<Paginated<PlatformUser>>(
-            '/admin/users',
-            {
-                query: {
-                    role: filters.role || undefined,
-                    search: filters.search.trim() || undefined,
-                    page: filters.page,
-                    per_page: 20,
-                },
-            },
-        );
+function saveChanges(): void {
+    const user = selectedUser.value;
 
-        users.value = response.data;
-        meta.value = response.meta;
-    } catch (caught) {
-        if (caught instanceof ApiError && caught.status === 403) {
-            error.value = 'Only a Super Admin can manage platform accounts.';
-        } else {
-            error.value = errorMessage(caught);
-        }
-    } finally {
-        loading.value = false;
+    if (user === null || !hasChanges.value) {
+        return;
     }
+
+    saving.value = true;
+    fieldErrors.value = {};
+
+    const payload: { role: EditableRole; staff_type?: StaffType | null } = {
+        role: editForm.role,
+    };
+
+    if (editForm.role === 'STAFF') {
+        payload.staff_type = editForm.staff_type || null;
+    }
+
+    router.patch(
+        AccountAccessController.updateRole.url({ user: user.id }),
+        payload,
+        {
+            preserveScroll: true,
+            onError: (errors) => {
+                fieldErrors.value = errors;
+            },
+            onSuccess: (response) => {
+                showSuccess(response.props);
+                dialogOpen.value = false;
+                selectedUser.value = null;
+                reloadUsers();
+            },
+            onFinish: () => {
+                saving.value = false;
+            },
+        },
+    );
+}
+
+function removeAccess(): void {
+    const user = selectedUser.value;
+
+    if (user === null) {
+        return;
+    }
+
+    saving.value = true;
+    fieldErrors.value = {};
+
+    router.post(
+        AccountAccessController.removeAccess.url({ user: user.id }),
+        {},
+        {
+            preserveScroll: true,
+            onError: (errors) => {
+                fieldErrors.value = errors;
+            },
+            onSuccess: (response) => {
+                showSuccess(response.props);
+                dialogOpen.value = false;
+                selectedUser.value = null;
+                confirmingRemoval.value = false;
+                reloadUsers();
+            },
+            onFinish: () => {
+                saving.value = false;
+            },
+        },
+    );
+}
+
+function visitUsers(pageNumber: number): void {
+    filters.page = pageNumber;
+
+    router.get(
+        DashboardController.users.url({
+            query: {
+                search: filters.search.trim() || undefined,
+                role: filters.role || undefined,
+                page: pageNumber,
+            },
+        }),
+        {},
+        { preserveScroll: true, preserveState: true, replace: true },
+    );
 }
 
 function applyFilters(): void {
-    filters.page = 1;
-    void load();
+    visitUsers(1);
 }
-
-onMounted(() => void load());
 </script>
 
 <template>
@@ -144,8 +234,8 @@ onMounted(() => void load());
             <ShieldCheck class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
             <p>
                 Public registration always creates a Customer. Only a Super
-                Admin can raise an account to Staff, Administrator or Super
-                Admin, and the last Super Admin cannot be demoted.
+                Admin can assign roles to non-Super Admin accounts. Super Admin
+                accounts cannot be changed.
             </p>
         </div>
 
@@ -160,7 +250,7 @@ onMounted(() => void load());
                     v-model="filters.search"
                     type="search"
                     placeholder="Name or email"
-                    class="mori-field h-9 px-3"
+                    class="mori-field h-12 px-3"
                 />
             </div>
 
@@ -169,7 +259,7 @@ onMounted(() => void load());
                 <select
                     id="role"
                     v-model="filters.role"
-                    class="mori-field h-9 px-3"
+                    class="mori-field h-12 px-3"
                 >
                     <option value="">All roles</option>
                     <option
@@ -187,37 +277,48 @@ onMounted(() => void load());
             </AppButton>
         </form>
 
-        <p
-            v-if="error"
-            class="mt-4 rounded border border-[#f0c4c4] bg-[#fae9e9] px-4 py-3 text-sm text-[#7a1f1f]"
-            role="alert"
-        >
-            {{ error }}
-        </p>
-
-        <div v-else class="mt-4">
+        <div class="mt-4">
             <DataTable
                 :columns="columns"
                 :rows="rows"
                 row-key="id"
-                :loading="loading"
                 striped
                 empty-title="No accounts"
                 empty-description="No account matches these filters."
             >
                 <template #cell-name="{ row }">
-                    <div class="flex flex-col">
-                        <span class="font-medium text-mori-ink">
-                            {{ asUser(row).name }}
-                            <span
-                                v-if="asUser(row).id === currentUserId"
-                                class="ml-1 text-xs font-normal text-mori-muted"
-                            >
-                                (you)
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex min-w-0 flex-col">
+                            <span class="font-medium text-mori-ink">
+                                {{ asUser(row).name }}
+                                <span
+                                    v-if="asUser(row).id === currentUserId"
+                                    class="ml-1 text-xs font-normal text-mori-muted"
+                                >
+                                    (you)
+                                </span>
                             </span>
-                        </span>
-                        <span class="text-xs text-mori-muted">
-                            {{ asUser(row).email }}
+                            <span class="text-xs text-mori-muted">
+                                {{ asUser(row).email }}
+                            </span>
+                        </div>
+                        <button
+                            v-if="asUser(row).role !== 'SUPER_ADMIN'"
+                            type="button"
+                            class="shrink-0 rounded p-1 text-mori-muted hover:bg-mori-cream hover:text-mori-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mori-wine disabled:cursor-not-allowed disabled:opacity-50"
+                            :aria-label="`Edit role for ${asUser(row).name}`"
+                            :disabled="!props.canAssignRoles"
+                            @click.stop="openEditor(asUser(row))"
+                        >
+                            <Pencil class="size-4" aria-hidden="true" />
+                        </button>
+                        <span
+                            v-else
+                            class="shrink-0 rounded p-1 text-mori-muted"
+                            title="Super Admin accounts cannot be changed"
+                            aria-label="Super Admin accounts cannot be changed"
+                        >
+                            <LockKeyhole class="size-4" aria-hidden="true" />
                         </span>
                     </div>
                 </template>
@@ -229,42 +330,13 @@ onMounted(() => void load());
                 </template>
 
                 <template #cell-role="{ row }">
-                    <AppBadge :tone="roleTone(asUser(row).role)">
-                        {{ userRoleLabel(asUser(row).role) }}
-                    </AppBadge>
+                    <PlatformRoleBadge :role="asUser(row).role" />
                 </template>
 
                 <template #cell-created_at="{ row }">
                     <span class="text-mori-muted">
                         {{ formatDate(asUser(row).created_at) }}
                     </span>
-                </template>
-
-                <template #cell-actions="{ row }">
-                    <div class="flex justify-end">
-                        <label class="sr-only" :for="`role-${asUser(row).id}`">
-                            Change role for {{ asUser(row).name }}
-                        </label>
-                        <select
-                            :id="`role-${asUser(row).id}`"
-                            :value="asUser(row).role"
-                            :disabled="
-                                !props.canAssignRoles ||
-                                savingId === asUser(row).id ||
-                                asUser(row).id === currentUserId
-                            "
-                            class="mori-field h-9 px-2 disabled:cursor-not-allowed"
-                            @change="changeRole(asUser(row), $event)"
-                        >
-                            <option
-                                v-for="option in userRoles"
-                                :key="option.value"
-                                :value="option.value"
-                            >
-                                {{ option.label }}
-                            </option>
-                        </select>
-                    </div>
                 </template>
             </DataTable>
 
@@ -285,10 +357,7 @@ onMounted(() => void load());
                 type="button"
                 class="rounded border border-mori-field bg-mori-paper px-3 py-1.5 text-mori-ink hover:bg-mori-cream disabled:cursor-not-allowed disabled:border-mori-line disabled:bg-[#ede9e1] disabled:text-mori-muted"
                 :disabled="meta.current_page <= 1"
-                @click="
-                    filters.page = meta.current_page - 1;
-                    load();
-                "
+                @click="visitUsers(meta.current_page - 1)"
             >
                 Previous
             </button>
@@ -296,13 +365,141 @@ onMounted(() => void load());
                 type="button"
                 class="rounded border border-mori-field bg-mori-paper px-3 py-1.5 text-mori-ink hover:bg-mori-cream disabled:cursor-not-allowed disabled:border-mori-line disabled:bg-[#ede9e1] disabled:text-mori-muted"
                 :disabled="meta.current_page >= meta.last_page"
-                @click="
-                    filters.page = meta.current_page + 1;
-                    load();
-                "
+                @click="visitUsers(meta.current_page + 1)"
             >
                 Next
             </button>
         </div>
+
+        <AppModal
+            v-model:open="dialogOpen"
+            title="Edit account role"
+            description="Update this account's platform role and staff type."
+        >
+            <div v-if="selectedUser" class="space-y-5">
+                <div class="space-y-1">
+                    <p class="font-medium text-mori-ink">
+                        {{ selectedUser.name }}
+                    </p>
+                    <p class="text-sm text-mori-muted">
+                        {{ selectedUser.email }}
+                    </p>
+                </div>
+
+                <div class="space-y-2">
+                    <label for="account-role" class="mori-field-label">
+                        Role
+                    </label>
+                    <select
+                        id="account-role"
+                        v-model="editForm.role"
+                        class="mori-field h-12 bg-white px-3"
+                        :aria-invalid="Boolean(fieldErrors.role)"
+                        :disabled="saving"
+                    >
+                        <option
+                            v-for="option in editableRoles"
+                            :key="option.value"
+                            :value="option.value"
+                        >
+                            {{ option.label }}
+                        </option>
+                    </select>
+                    <p
+                        v-if="fieldErrors.role"
+                        class="text-sm text-[#7a1f1f]"
+                        role="alert"
+                    >
+                        {{ fieldErrors.role }}
+                    </p>
+                </div>
+
+                <div v-if="editForm.role === 'STAFF'" class="space-y-2">
+                    <label for="account-staff-type" class="mori-field-label">
+                        Staff type
+                    </label>
+                    <select
+                        id="account-staff-type"
+                        v-model="editForm.staff_type"
+                        class="mori-field h-12 bg-white px-3"
+                        :aria-invalid="Boolean(fieldErrors.staff_type)"
+                        :disabled="saving"
+                    >
+                        <option value="">No specific type</option>
+                        <option
+                            v-for="staffType in staffTypes"
+                            :key="staffType.value"
+                            :value="staffType.value"
+                        >
+                            {{ staffType.label }}
+                        </option>
+                    </select>
+                    <p
+                        v-if="fieldErrors.staff_type"
+                        class="text-sm text-[#7a1f1f]"
+                        role="alert"
+                    >
+                        {{ fieldErrors.staff_type }}
+                    </p>
+                </div>
+
+                <p
+                    v-if="confirmingRemoval"
+                    class="rounded border border-[#e7c5c5] bg-[#fae9e9] p-3 text-sm text-[#7a1f1f]"
+                    role="alert"
+                >
+                    This will make {{ selectedUser.name }} a Customer and remove
+                    their restaurant access. Continue?
+                </p>
+            </div>
+
+            <template #footer>
+                <template v-if="confirmingRemoval">
+                    <AppButton
+                        variant="outline"
+                        :disabled="saving"
+                        @click="confirmingRemoval = false"
+                    >
+                        Cancel
+                    </AppButton>
+                    <AppButton
+                        variant="outline"
+                        class="border-[#8c2f2f] text-[#7a1f1f] hover:bg-[#fae9e9]"
+                        :loading="saving"
+                        @click="removeAccess"
+                    >
+                        Confirm remove access
+                    </AppButton>
+                </template>
+                <template v-else>
+                    <AppButton
+                        variant="outline"
+                        :disabled="saving"
+                        @click="closeEditor"
+                    >
+                        Cancel
+                    </AppButton>
+                    <AppButton
+                        v-if="
+                            selectedUser &&
+                            ['STAFF', 'ADMIN'].includes(selectedUser.role)
+                        "
+                        variant="outline"
+                        class="border-[#8c2f2f] text-[#7a1f1f] hover:bg-[#fae9e9]"
+                        :disabled="saving"
+                        @click="confirmingRemoval = true"
+                    >
+                        Remove access
+                    </AppButton>
+                    <AppButton
+                        :loading="saving"
+                        :disabled="!hasChanges"
+                        @click="saveChanges"
+                    >
+                        Save changes
+                    </AppButton>
+                </template>
+            </template>
+        </AppModal>
     </div>
 </template>

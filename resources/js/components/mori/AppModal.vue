@@ -33,9 +33,9 @@ const emit = defineEmits<{
     <Dialog :open="open" @update:open="emit('update:open', $event)">
         <DialogContent
             :class="wide ? 'sm:max-w-2xl' : 'sm:max-w-lg'"
-            class="mori-dialog font-body flex max-h-[85dvh] flex-col overflow-hidden"
+            class="mori-dialog flex max-h-[85dvh] flex-col overflow-hidden font-body"
         >
-            <DialogHeader class="shrink-0 border-b border-mori-line pb-4 pr-8">
+            <DialogHeader class="shrink-0 border-b border-mori-line pr-8 pb-4">
                 <DialogTitle class="mori-heading text-xl text-mori-ink">
                     {{ title }}
                 </DialogTitle>

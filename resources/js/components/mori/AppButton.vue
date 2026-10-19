@@ -43,8 +43,7 @@ const variants: Record<Variant, string> = {
     accent: 'bg-mori-brass text-mori-ink hover:bg-[#b08a50] focus-visible:outline-mori-brass',
     outline:
         'border border-mori-field bg-mori-paper text-mori-ink hover:bg-mori-cream focus-visible:outline-mori-wine',
-    ghost:
-        'bg-transparent text-mori-ink hover:bg-mori-cream focus-visible:outline-mori-wine',
+    ghost: 'bg-transparent text-mori-ink hover:bg-mori-cream focus-visible:outline-mori-wine',
     dark: 'bg-mori-ink text-white hover:bg-mori-ink/90 focus-visible:outline-mori-ink',
     light: 'bg-mori-cream text-mori-ink hover:bg-mori-sand/60 focus-visible:outline-mori-ink',
 };

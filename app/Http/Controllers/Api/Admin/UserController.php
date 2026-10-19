@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Enums\StaffType;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\UpdateUserRoleRequest;
@@ -42,12 +43,11 @@ class UserController extends Controller
         User $user,
         RoleAssignmentService $roles,
     ): UserResource {
-        Gate::authorize('assignRole', $user);
-
         $roles->assign(
             $user,
             $request->enum('role', UserRole::class),
-            $request->user(),
+            $request->enum('staff_type', StaffType::class),
+            $request->hasStaffType(),
         );
 
         return new UserResource($user->refresh());

@@ -2,7 +2,6 @@
 
 namespace App\Policies;
 
-use App\Enums\UserRole;
 use App\Models\User;
 
 /**
@@ -25,16 +24,8 @@ class UserPolicy
      * Only a Super Admin may change another user's role. Admins and Staff can
      * never promote themselves or anyone else.
      */
-    public function assignRole(User $user, User $target): bool
+    public function changeRole(User $user, User $target): bool
     {
-        return $user->isSuperAdmin();
-    }
-
-    /**
-     * Guard rails applied before a role change is allowed.
-     */
-    public function demoteSuperAdmin(User $user, User $target): bool
-    {
-        return $user->isSuperAdmin() && $target->role === UserRole::SuperAdmin;
+        return $user->isSuperAdmin() && ! $target->isSuperAdmin();
     }
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AccountAccessController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\CustomerOrderController;
 use App\Http\Controllers\CustomerRestrictionController;
@@ -65,6 +66,10 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): v
     // Super Admin only; the controller aborts 403 for everyone else because
     // this page is not scoped to a single restaurant.
     Route::get('users', [DashboardController::class, 'users'])->name('users.index');
+    Route::patch('accounts/{user}/role', [AccountAccessController::class, 'updateRole'])
+        ->name('accounts.role.update');
+    Route::post('accounts/{user}/remove-access', [AccountAccessController::class, 'removeAccess'])
+        ->name('accounts.remove-access');
 });
 
 require __DIR__.'/settings.php';

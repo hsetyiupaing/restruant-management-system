@@ -257,7 +257,9 @@ onMounted(() => {
 
                     <div class="mt-4 space-y-4">
                         <div class="space-y-1.5">
-                            <Label for="date" class="mori-field-label">Date</Label>
+                            <Label for="date" class="mori-field-label"
+                                >Date</Label
+                            >
                             <Input
                                 id="date"
                                 v-model="form.date"
@@ -306,7 +308,9 @@ onMounted(() => {
                         </div>
 
                         <div class="space-y-1.5">
-                            <Label for="special_request" class="mori-field-label"
+                            <Label
+                                for="special_request"
+                                class="mori-field-label"
                                 >Anything we should know?</Label
                             >
                             <Textarea

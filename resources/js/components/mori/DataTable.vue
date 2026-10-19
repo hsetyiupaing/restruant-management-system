@@ -52,7 +52,9 @@ const isEmpty = computed(() => !props.loading && props.rows.length === 0);
 </script>
 
 <template>
-    <div class="overflow-x-auto rounded-lg border border-mori-line bg-mori-paper">
+    <div
+        class="overflow-x-auto rounded-lg border border-mori-line bg-mori-paper"
+    >
         <table class="w-full min-w-[640px] border-collapse text-sm">
             <thead>
                 <tr class="border-b border-mori-line bg-mori-cream">

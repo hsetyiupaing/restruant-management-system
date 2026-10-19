@@ -67,8 +67,7 @@ Route::prefix('v1')->group(function (): void {
             Route::post('payments/{payment}/refund', [Admin\PaymentController::class, 'refund']);
 
             // Platform accounts. The policy restricts every action to a Super
-            // Admin; role assignment is additionally guarded against removing
-            // the last Super Admin.
+            // Admin; role assignment is additionally guarded by the user policy.
             Route::get('users', [Admin\UserController::class, 'index']);
             Route::patch('users/{user}/role', [Admin\UserController::class, 'updateRole']);
 

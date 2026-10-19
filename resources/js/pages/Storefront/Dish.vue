@@ -328,7 +328,7 @@ onMounted(load);
             class="mt-6 grid gap-8 lg:grid-cols-2 lg:gap-12"
         >
             <div
-                class="relative aspect-[4/3] overflow-hidden rounded border border-mori-line bg-mori-cream"
+                class="relative aspect-[4/3] overflow-hidden rounded border border-mori-line bg-mori-cream lg:sticky lg:top-28 lg:self-start"
             >
                 <img
                     v-if="item.image_url"

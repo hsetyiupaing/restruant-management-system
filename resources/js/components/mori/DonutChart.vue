@@ -54,7 +54,10 @@ function share(value: number): number {
 
 <template>
     <div class="flex flex-wrap items-center gap-5">
-        <div class="relative shrink-0" :style="{ width: `${size}px`, height: `${size}px` }">
+        <div
+            class="relative shrink-0"
+            :style="{ width: `${size}px`, height: `${size}px` }"
+        >
             <svg
                 :viewBox="`0 0 ${size} ${size}`"
                 role="img"
@@ -81,7 +84,9 @@ function share(value: number): number {
                     :stroke-dasharray="segment.dasharray"
                     :stroke-dashoffset="segment.dashoffset"
                 >
-                    <title>{{ segment.label }} · {{ share(segment.value) }}%</title>
+                    <title>
+                        {{ segment.label }} · {{ share(segment.value) }}%
+                    </title>
                 </circle>
             </svg>
         </div>

@@ -115,8 +115,11 @@ export const api = {
         request<T>('GET', path, options),
     post: <T>(path: string, body?: unknown, options?: RequestOptions) =>
         request<T>('POST', path, { ...options, body }),
-    postFormData: <T>(path: string, body: FormData, options?: Omit<RequestOptions, 'body'>) =>
-        request<T>('POST', path, { ...options, body }),
+    postFormData: <T>(
+        path: string,
+        body: FormData,
+        options?: Omit<RequestOptions, 'body'>,
+    ) => request<T>('POST', path, { ...options, body }),
     patch: <T>(path: string, body?: unknown, options?: RequestOptions) =>
         request<T>('PATCH', path, { ...options, body }),
     put: <T>(path: string, body?: unknown, options?: RequestOptions) =>
