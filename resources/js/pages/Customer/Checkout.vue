@@ -156,8 +156,11 @@ async function placeOrder(): Promise<void> {
             <AppButton href="/menu" size="sm">Browse the menu</AppButton>
         </EmptyState>
 
-        <div v-else class="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
-            <div class="space-y-6">
+        <div
+            v-else
+            class="mt-8 grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_22.5rem]"
+        >
+            <div class="min-w-0 space-y-6">
                 <section class="rounded border border-mori-line bg-mori-paper">
                     <h2
                         class="border-b border-mori-line px-5 py-3 text-sm font-semibold text-mori-ink"
@@ -168,9 +171,9 @@ async function placeOrder(): Promise<void> {
                         <li
                             v-for="line in lines"
                             :key="lineKey(line)"
-                            class="flex items-start gap-4 px-5 py-4"
+                            class="flex flex-wrap items-start gap-x-4 gap-y-3 px-5 py-4"
                         >
-                            <div class="min-w-0 flex-1">
+                            <div class="min-w-0 flex-1 basis-48">
                                 <p class="font-medium text-mori-ink">
                                     {{ line.name }}
                                 </p>
@@ -202,7 +205,7 @@ async function placeOrder(): Promise<void> {
                             </div>
 
                             <div
-                                class="flex items-center gap-1"
+                                class="ml-auto flex shrink-0 items-center gap-1"
                                 role="group"
                                 :aria-label="`Quantity for ${line.name}`"
                             >
@@ -383,7 +386,7 @@ async function placeOrder(): Promise<void> {
                 </section>
             </div>
 
-            <aside class="lg:sticky lg:top-28 lg:self-start">
+            <aside class="min-w-0 lg:sticky lg:top-28 lg:self-start">
                 <div class="rounded border border-mori-line bg-mori-paper p-5">
                     <h2 class="mori-heading text-lg text-mori-ink">Summary</h2>
 

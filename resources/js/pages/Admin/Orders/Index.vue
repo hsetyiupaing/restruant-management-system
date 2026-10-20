@@ -193,7 +193,7 @@ onMounted(() => void load());
 
         <div
             v-if="meta && meta.last_page > 1"
-            class="mt-4 flex items-center justify-between gap-3 text-sm"
+            class="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm"
         >
             <p class="text-mori-muted">
                 Showing {{ meta.from }}–{{ meta.to }} of {{ meta.total }}

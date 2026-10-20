@@ -246,8 +246,11 @@ onMounted(() => {
             Online reservations are unavailable because no restaurant is active.
         </p>
 
-        <div v-else class="mt-8 grid gap-8 lg:grid-cols-[380px_1fr]">
-            <div class="space-y-6">
+        <div
+            v-else
+            class="mt-8 grid min-w-0 gap-8 lg:grid-cols-[minmax(0,23.75rem)_minmax(0,1fr)]"
+        >
+            <div class="min-w-0 space-y-6">
                 <section
                     class="rounded border border-mori-line bg-mori-paper p-5"
                 >
@@ -468,12 +471,16 @@ onMounted(() => {
                     Loading floor plan…
                 </div>
 
-                <FloorPlan
+                <div
                     v-else-if="availability && availability.tables.length > 0"
-                    :tables="availability.tables"
-                    :selected-id="selectedTableId"
-                    @select="selectTable"
-                />
+                    class="-mx-1 overflow-x-auto px-1 pb-1"
+                >
+                    <FloorPlan
+                        :tables="availability.tables"
+                        :selected-id="selectedTableId"
+                        @select="selectTable"
+                    />
+                </div>
 
                 <p
                     v-if="

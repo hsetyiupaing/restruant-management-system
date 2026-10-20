@@ -282,67 +282,73 @@ onMounted(() => void load());
                 </div>
             </header>
 
-            <div class="mt-4 grid gap-4 lg:grid-cols-[1fr_340px]">
-                <div class="space-y-4">
+            <div
+                class="mt-4 grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_21.25rem]"
+            >
+                <div class="min-w-0 space-y-4">
                     <section class="report-card">
                         <h2
                             class="report-card-title border-b border-mori-line px-5 py-3"
                         >
                             Items
                         </h2>
-                        <table class="w-full text-sm">
-                            <tbody>
-                                <tr
-                                    v-for="item in order.items ?? []"
-                                    :key="item.id"
-                                    class="border-b border-mori-line/60 last:border-0"
-                                >
-                                    <td class="px-5 py-3">
-                                        <p class="font-medium text-mori-ink">
-                                            {{ item.name }}
-                                        </p>
-                                        <p
-                                            v-if="item.note"
-                                            class="text-xs text-mori-muted"
-                                        >
-                                            {{ item.note }}
-                                        </p>
-                                        <ul
-                                            v-if="
-                                                item.selected_customizations
-                                                    ?.length
-                                            "
-                                            class="mt-1 space-y-0.5 text-xs text-mori-muted"
-                                        >
-                                            <li
-                                                v-for="group in item.selected_customizations"
-                                                :key="group.group_id"
+                        <div class="overflow-x-auto">
+                            <table class="w-full min-w-[20rem] text-sm">
+                                <tbody>
+                                    <tr
+                                        v-for="item in order.items ?? []"
+                                        :key="item.id"
+                                        class="border-b border-mori-line/60 last:border-0"
+                                    >
+                                        <td class="px-5 py-3">
+                                            <p
+                                                class="font-medium text-mori-ink"
                                             >
-                                                {{ group.group_name }}:
-                                                {{
-                                                    group.options
-                                                        .map(
-                                                            (option) =>
-                                                                option.name,
-                                                        )
-                                                        .join(', ')
-                                                }}
-                                            </li>
-                                        </ul>
-                                    </td>
-                                    <td
-                                        class="px-3 py-3 text-right text-mori-muted"
-                                    >
-                                        × {{ item.quantity }}
-                                    </td>
-                                    <td
-                                        class="px-5 py-3 text-right whitespace-nowrap"
-                                    >
-                                        {{ formatMoney(item.line_total) }}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                                {{ item.name }}
+                                            </p>
+                                            <p
+                                                v-if="item.note"
+                                                class="text-xs text-mori-muted"
+                                            >
+                                                {{ item.note }}
+                                            </p>
+                                            <ul
+                                                v-if="
+                                                    item.selected_customizations
+                                                        ?.length
+                                                "
+                                                class="mt-1 space-y-0.5 text-xs text-mori-muted"
+                                            >
+                                                <li
+                                                    v-for="group in item.selected_customizations"
+                                                    :key="group.group_id"
+                                                >
+                                                    {{ group.group_name }}:
+                                                    {{
+                                                        group.options
+                                                            .map(
+                                                                (option) =>
+                                                                    option.name,
+                                                            )
+                                                            .join(', ')
+                                                    }}
+                                                </li>
+                                            </ul>
+                                        </td>
+                                        <td
+                                            class="px-3 py-3 text-right text-mori-muted"
+                                        >
+                                            × {{ item.quantity }}
+                                        </td>
+                                        <td
+                                            class="px-5 py-3 text-right whitespace-nowrap"
+                                        >
+                                            {{ formatMoney(item.line_total) }}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
 
                         <dl
                             class="space-y-1.5 border-t border-mori-line px-5 py-4 text-sm"

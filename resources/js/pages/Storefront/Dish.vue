@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ArrowLeft, Check, Minus, Plus, TriangleAlert } from '@lucide/vue';
 import { toast } from 'vue-sonner';
@@ -40,6 +40,7 @@ const note = ref('');
 const adding = ref(false);
 const added = ref(false);
 const selectedOptions = ref<Record<string, string[]>>({});
+let addedTimeout: number | undefined;
 
 const customizationGroups = computed(
     () => item.value?.customization_groups ?? [],
@@ -256,7 +257,8 @@ function addToOrder(): void {
         },
     );
 
-    window.setTimeout(() => {
+    window.clearTimeout(addedTimeout);
+    addedTimeout = window.setTimeout(() => {
         added.value = false;
     }, 2000);
 }
@@ -264,6 +266,7 @@ function addToOrder(): void {
 watch(() => props.dish, load);
 
 onMounted(load);
+onUnmounted(() => window.clearTimeout(addedTimeout));
 </script>
 
 <template>
@@ -281,7 +284,7 @@ onMounted(load);
         <!-- Loading -->
         <div
             v-if="loading"
-            class="mt-6 grid gap-8 lg:grid-cols-2"
+            class="mt-6 grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
             aria-busy="true"
             aria-live="polite"
         >
@@ -325,10 +328,10 @@ onMounted(load);
         <!-- Dish -->
         <article
             v-else-if="item"
-            class="mt-6 grid gap-8 lg:grid-cols-2 lg:gap-12"
+            class="mt-6 grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-12"
         >
             <div
-                class="relative aspect-[4/3] overflow-hidden rounded border border-mori-line bg-mori-cream lg:sticky lg:top-28 lg:self-start"
+                class="relative aspect-[4/3] min-w-0 overflow-hidden rounded border border-mori-line bg-mori-cream lg:sticky lg:top-28 lg:self-start"
             >
                 <img
                     v-if="item.image_url"
@@ -372,7 +375,7 @@ onMounted(load);
                     </template>
                 </p>
                 <h1
-                    class="mori-heading mt-2 text-3xl text-mori-ink sm:text-4xl"
+                    class="mori-heading mt-2 text-3xl break-words text-mori-ink sm:text-4xl"
                 >
                     {{ item.name }}
                 </h1>
@@ -382,7 +385,7 @@ onMounted(load);
 
                 <p
                     v-if="item.description"
-                    class="mt-4 max-w-prose text-sm leading-relaxed text-mori-muted sm:text-base"
+                    class="mt-4 max-w-prose text-sm leading-relaxed break-words text-mori-muted sm:text-base"
                 >
                     {{ item.description }}
                 </p>
@@ -403,7 +406,7 @@ onMounted(load);
 
                 <!-- Ingredients and allergens -->
                 <section
-                    class="mt-6 space-y-4 rounded border border-mori-line bg-mori-paper p-5"
+                    class="mt-6 min-w-0 space-y-4 rounded border border-mori-line bg-mori-paper p-5"
                     aria-labelledby="ingredients-heading"
                 >
                     <h2
@@ -419,7 +422,7 @@ onMounted(load);
                         </h3>
                         <p
                             v-if="item.ingredients"
-                            class="mt-1 text-sm text-mori-muted"
+                            class="mt-1 text-sm break-words text-mori-muted"
                         >
                             {{ item.ingredients }}
                         </p>

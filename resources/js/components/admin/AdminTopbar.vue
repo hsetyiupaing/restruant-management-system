@@ -33,19 +33,23 @@ const navigation = computed(() => [
         <div
             class="flex flex-wrap items-center justify-between gap-3 px-5 py-4 lg:px-8"
         >
-            <div>
-                <h1 class="mori-heading text-xl text-mori-ink">{{ title }}</h1>
-                <p class="mt-0.5 text-xs text-mori-muted">
+            <div class="min-w-0">
+                <h1 class="mori-heading text-xl break-words text-mori-ink">
+                    {{ title }}
+                </h1>
+                <p class="mt-0.5 text-xs break-words text-mori-muted">
                     {{ subtitle ?? restaurant?.name }}
                 </p>
             </div>
 
             <div class="flex items-center gap-3">
-                <div class="hidden text-right sm:block">
-                    <p class="text-sm font-medium text-mori-ink">
+                <div class="hidden max-w-[12rem] text-right sm:block">
+                    <p class="truncate text-sm font-medium text-mori-ink">
                         {{ user?.name }}
                     </p>
-                    <p class="text-xs text-mori-muted">{{ user?.email }}</p>
+                    <p class="truncate text-xs text-mori-muted">
+                        {{ user?.email }}
+                    </p>
                 </div>
                 <span
                     class="flex size-9 items-center justify-center rounded-full bg-mori-brass text-xs font-semibold text-mori-ink"

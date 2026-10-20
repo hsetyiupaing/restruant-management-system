@@ -132,7 +132,7 @@ onUnmounted(() => revealObserver?.disconnect());
                     Now serving
                 </p>
                 <h1
-                    class="home-hero-text mt-5 font-display text-5xl leading-tight font-semibold text-white sm:text-6xl"
+                    class="home-hero-text mt-5 font-display text-5xl leading-tight font-semibold break-words text-white sm:text-6xl"
                 >
                     {{ restaurant?.name ?? 'MORI' }}
                 </h1>

@@ -308,11 +308,11 @@ onMounted(() => void load());
                         <p class="mori-field-label">
                             {{ label }}
                         </p>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1.5">
                             <Input
                                 v-model="hours[key].open"
                                 type="time"
-                                class="h-8 text-xs"
+                                class="h-8 min-w-0 flex-1 text-xs"
                                 :disabled="hours[key].closed"
                                 :aria-label="`${label} opening time`"
                             />
@@ -320,7 +320,7 @@ onMounted(() => void load());
                             <Input
                                 v-model="hours[key].close"
                                 type="time"
-                                class="h-8 text-xs"
+                                class="h-8 min-w-0 flex-1 text-xs"
                                 :disabled="hours[key].closed"
                                 :aria-label="`${label} closing time`"
                             />

@@ -464,7 +464,7 @@ onMounted(() => {
             administrator for access.
         </p>
 
-        <div class="grid gap-4 lg:grid-cols-[280px_1fr]">
+        <div class="grid min-w-0 gap-4 lg:grid-cols-[17.5rem_minmax(0,1fr)]">
             <aside class="report-card">
                 <div
                     class="flex items-center justify-between border-b border-mori-line px-4 py-3"
@@ -526,7 +526,7 @@ onMounted(() => {
                         </button>
                         <span
                             v-if="canManageMenu"
-                            class="flex shrink-0 gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100"
+                            class="flex shrink-0 gap-0.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"
                         >
                             <button
                                 type="button"

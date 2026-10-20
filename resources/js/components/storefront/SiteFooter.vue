@@ -21,7 +21,7 @@ const days = [
 <template>
     <footer class="mt-20 border-t border-mori-line bg-mori-cream">
         <div class="mori-container grid gap-10 py-14 md:grid-cols-3">
-            <div class="space-y-4">
+            <div class="min-w-0 space-y-4">
                 <BrandLogo />
                 <p class="max-w-xs text-sm leading-relaxed text-mori-muted">
                     Seasonal cooking over open fire, served in a room built for
@@ -29,14 +29,14 @@ const days = [
                 </p>
             </div>
 
-            <div>
+            <div class="min-w-0">
                 <h2
                     class="text-xs font-semibold tracking-[0.22em] text-mori-ink uppercase"
                 >
                     Visit
                 </h2>
                 <address
-                    class="mt-4 space-y-1 text-sm text-mori-muted not-italic"
+                    class="mt-4 space-y-1 text-sm break-words text-mori-muted not-italic"
                 >
                     <p>
                         {{ restaurant?.address ?? 'Address to be confirmed' }}
@@ -45,7 +45,7 @@ const days = [
                 </address>
             </div>
 
-            <div>
+            <div class="min-w-0">
                 <h2
                     class="text-xs font-semibold tracking-[0.22em] text-mori-ink uppercase"
                 >

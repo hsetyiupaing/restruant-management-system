@@ -215,8 +215,10 @@ onMounted(() => {
         </div>
     </section>
 
-    <div class="mori-container grid gap-8 py-10 lg:grid-cols-[1fr_320px]">
-        <div>
+    <div
+        class="mori-container grid min-w-0 gap-8 py-10 lg:grid-cols-[minmax(0,1fr)_20rem]"
+    >
+        <div class="min-w-0">
             <div class="space-y-5">
                 <div class="relative">
                     <Search
@@ -455,7 +457,7 @@ onMounted(() => {
             </div>
         </div>
 
-        <aside class="lg:sticky lg:top-28 lg:self-start">
+        <aside class="min-w-0 lg:sticky lg:top-28 lg:self-start">
             <div class="rounded border border-mori-line bg-mori-paper p-5">
                 <h2 class="mori-heading text-lg">Your order</h2>
                 <p v-if="itemCount === 0" class="mt-2 text-sm text-mori-muted">

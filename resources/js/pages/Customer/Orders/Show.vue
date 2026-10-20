@@ -141,8 +141,10 @@ onMounted(() => void load());
                 </div>
             </header>
 
-            <div class="mt-8 grid gap-6 lg:grid-cols-[1fr_340px]">
-                <div class="space-y-6">
+            <div
+                class="mt-8 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_21.25rem]"
+            >
+                <div class="min-w-0 space-y-6">
                     <section
                         class="rounded border border-mori-line bg-mori-paper"
                     >

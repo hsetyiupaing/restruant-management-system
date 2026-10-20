@@ -195,7 +195,10 @@
     color: #ffffff;
 }
 
-@media (min-width: 768px) {
+/* Matches the `lg` breakpoint: the topbar only loses its scrolling nav row
+   (AdminTopbar's `lg:hidden` nav) at 1024px, so the offset must not shrink
+   before then or the sticky filter bar slides under the topbar. */
+@media (min-width: 1024px) {
     .admin-shell {
         --admin-topbar-height: 5.25rem;
     }
@@ -206,6 +209,17 @@
     top: var(--admin-topbar-height);
     z-index: 30;
     box-shadow: 0 8px 16px -16px rgb(26 26 28 / 60%);
+}
+
+/*
+  Below `lg` the topbar becomes two rows (title + actions + scrolling nav) and
+  its height changes with wrapping, so a fixed sticky offset would either hide
+  the filter bar or leave a gap. Let it scroll away instead.
+*/
+@media (max-width: 1023px) {
+    .admin-filter-bar {
+        position: static;
+    }
 }
 
 /*
@@ -451,6 +465,14 @@ select.mori-field {
     border: 1px solid var(--mori-line);
     border-radius: 10px;
     background-color: var(--mori-cream);
+}
+
+/* Below the breakpoint the plan scrolls sideways instead of shrinking until
+   the table numbers and seat counts stop being readable. */
+@media (max-width: 639px) {
+    .reserve-page .floor-plan {
+        min-width: 30rem;
+    }
 }
 
 .reserve-page .floor-plan-table rect {
