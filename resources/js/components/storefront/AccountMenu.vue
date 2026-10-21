@@ -34,8 +34,10 @@ const items = [
 ];
 
 function handleLogout(): void {
-    // Drop any per-page state (cart, cached props) so the next visitor of this
-    // browser cannot see the previous customer's data.
+    // The cart namespace is owned by the server (auth user id or the current
+    // session's guest token), so signing out alone is enough to stop the next
+    // visitor from seeing this account's cart. Clearing Inertia's prefetch
+    // cache keeps the next page from being served stale shared props.
     router.flushAll();
 }
 </script>

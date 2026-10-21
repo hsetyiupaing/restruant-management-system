@@ -24,6 +24,11 @@ const navigation = computed(() => [
         : []),
     { title: 'Settings', href: '/admin/settings' },
 ]);
+
+function isActive(href: string): boolean {
+    const path = page.url.split('?')[0];
+    return href === '/admin' ? path === href : path.startsWith(href);
+}
 </script>
 
 <template>
@@ -84,7 +89,13 @@ const navigation = computed(() => [
                 v-for="item in navigation"
                 :key="item.href"
                 :href="item.href"
-                class="rounded px-3 py-2 text-xs whitespace-nowrap text-mori-muted hover:bg-mori-cream hover:text-mori-ink"
+                class="rounded px-3 py-1.5 text-xs whitespace-nowrap transition-colors"
+                :class="
+                    isActive(item.href)
+                        ? 'bg-mori-ink font-medium text-white'
+                        : 'text-mori-muted hover:bg-mori-cream hover:text-mori-ink'
+                "
+                :aria-current="isActive(item.href) ? 'page' : undefined"
             >
                 {{ item.title }}
             </Link>

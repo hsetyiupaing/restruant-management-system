@@ -50,8 +50,29 @@ class HandleInertiaRequests extends Middleware
                 'foodRestrictions' => fn (): array => $this->foodRestrictions($request),
             ],
             'restaurantContext' => fn (): ?array => $this->restaurantContext($request),
+            'cart' => fn (): array => ['owner' => $this->cartOwner($request)],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+
+    /**
+     * The browser-side cart namespace for this request.
+     *
+     * The cart itself lives in the browser (see resources/js/composables/useCart.ts),
+     * so it needs a server-issued owner that the client cannot choose. Signed-in
+     * customers are keyed by their own user id; guests are keyed by a one-way
+     * hash of the server-managed session id, which rotates on login and logout.
+     * The raw session id is never exposed.
+     */
+    private function cartOwner(Request $request): string
+    {
+        $user = $request->user();
+
+        if ($user !== null) {
+            return 'user:'.$user->getAuthIdentifier();
+        }
+
+        return 'guest:'.hash('sha256', $request->session()->getId());
     }
 
     /**

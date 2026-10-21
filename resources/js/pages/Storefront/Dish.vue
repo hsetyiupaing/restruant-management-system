@@ -251,8 +251,13 @@ function addToOrder(): void {
         `${quantity.value} × ${item.value.name} added to your order.`,
         {
             action: {
-                label: 'View order',
-                onClick: () => router.visit('/checkout'),
+                label: isAuthenticated.value
+                    ? 'View order'
+                    : 'Sign in to order',
+                onClick: () =>
+                    router.visit(
+                        isAuthenticated.value ? '/checkout' : '/login',
+                    ),
             },
         },
     );
@@ -864,8 +869,15 @@ onUnmounted(() => window.clearTimeout(addedTimeout));
                     >
                         <template v-if="added">
                             Added to your order.
-                            <Link href="/checkout" class="underline">
-                                Review and place your order
+                            <Link
+                                :href="isAuthenticated ? '/checkout' : '/login'"
+                                class="underline"
+                            >
+                                {{
+                                    isAuthenticated
+                                        ? 'Review and place your order'
+                                        : 'Sign in to place your order'
+                                }}
                             </Link>
                             when you're ready.
                         </template>

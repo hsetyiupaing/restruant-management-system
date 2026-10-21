@@ -171,9 +171,9 @@ async function placeOrder(): Promise<void> {
                         <li
                             v-for="line in lines"
                             :key="lineKey(line)"
-                            class="flex flex-wrap items-start gap-x-4 gap-y-3 px-5 py-4"
+                            class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
                         >
-                            <div class="min-w-0 flex-1 basis-48">
+                            <div class="min-w-0 flex-1">
                                 <p class="font-medium text-mori-ink">
                                     {{ line.name }}
                                 </p>
@@ -205,58 +205,70 @@ async function placeOrder(): Promise<void> {
                             </div>
 
                             <div
-                                class="ml-auto flex shrink-0 items-center gap-1"
-                                role="group"
-                                :aria-label="`Quantity for ${line.name}`"
+                                class="flex items-center justify-between gap-3 sm:justify-end"
                             >
-                                <button
-                                    type="button"
-                                    class="inline-flex size-7 items-center justify-center rounded border border-mori-line text-mori-ink hover:bg-mori-cream"
-                                    :aria-label="`Remove one ${line.name}`"
-                                    @click="
-                                        setQuantity(
-                                            lineKey(line),
-                                            line.quantity - 1,
-                                        )
-                                    "
+                                <div
+                                    class="flex shrink-0 items-center gap-1"
+                                    role="group"
+                                    :aria-label="`Quantity for ${line.name}`"
                                 >
-                                    <Minus class="size-3" aria-hidden="true" />
-                                </button>
-                                <span class="w-8 text-center text-sm">
-                                    {{ line.quantity }}
+                                    <button
+                                        type="button"
+                                        class="inline-flex size-7 items-center justify-center rounded border border-mori-line text-mori-ink hover:bg-mori-cream"
+                                        :aria-label="`Remove one ${line.name}`"
+                                        @click="
+                                            setQuantity(
+                                                lineKey(line),
+                                                line.quantity - 1,
+                                            )
+                                        "
+                                    >
+                                        <Minus
+                                            class="size-3"
+                                            aria-hidden="true"
+                                        />
+                                    </button>
+                                    <span class="w-8 text-center text-sm">
+                                        {{ line.quantity }}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        class="inline-flex size-7 items-center justify-center rounded border border-mori-line text-mori-ink hover:bg-mori-cream disabled:opacity-40"
+                                        :disabled="line.quantity >= 99"
+                                        :aria-label="`Add one ${line.name}`"
+                                        @click="
+                                            setQuantity(
+                                                lineKey(line),
+                                                line.quantity + 1,
+                                            )
+                                        "
+                                    >
+                                        <Plus
+                                            class="size-3"
+                                            aria-hidden="true"
+                                        />
+                                    </button>
+                                </div>
+
+                                <span
+                                    class="w-20 text-right text-sm font-medium text-mori-ink"
+                                >
+                                    {{
+                                        formatMoney(
+                                            Number(line.price) * line.quantity,
+                                        )
+                                    }}
                                 </span>
+
                                 <button
                                     type="button"
-                                    class="inline-flex size-7 items-center justify-center rounded border border-mori-line text-mori-ink hover:bg-mori-cream disabled:opacity-40"
-                                    :disabled="line.quantity >= 99"
-                                    :aria-label="`Add one ${line.name}`"
-                                    @click="
-                                        setQuantity(
-                                            lineKey(line),
-                                            line.quantity + 1,
-                                        )
-                                    "
+                                    class="inline-flex size-7 items-center justify-center rounded text-mori-muted hover:bg-mori-cream hover:text-mori-wine"
+                                    :aria-label="`Remove ${line.name} from order`"
+                                    @click="remove(lineKey(line))"
                                 >
-                                    <Plus class="size-3" aria-hidden="true" />
+                                    <Trash2 class="size-4" aria-hidden="true" />
                                 </button>
                             </div>
-
-                            <span class="w-20 text-right text-sm text-mori-ink">
-                                {{
-                                    formatMoney(
-                                        Number(line.price) * line.quantity,
-                                    )
-                                }}
-                            </span>
-
-                            <button
-                                type="button"
-                                class="inline-flex size-7 items-center justify-center rounded text-mori-muted hover:bg-mori-cream hover:text-mori-wine"
-                                :aria-label="`Remove ${line.name} from order`"
-                                @click="remove(lineKey(line))"
-                            >
-                                <Trash2 class="size-4" aria-hidden="true" />
-                            </button>
                         </li>
                     </ul>
                 </section>

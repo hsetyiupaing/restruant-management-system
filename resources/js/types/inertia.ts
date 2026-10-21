@@ -30,6 +30,7 @@ declare module '@inertiajs/core' {
             auth: Auth & { foodRestrictions?: FoodRestrictionEntry[] };
             sidebarOpen: boolean;
             restaurantContext: RestaurantContext | null;
+            cart: { owner: string };
             flash?: { toast?: FlashToast };
             [key: string]: unknown;
         };

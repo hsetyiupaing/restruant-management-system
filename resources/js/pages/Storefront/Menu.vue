@@ -26,6 +26,7 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
+const user = computed(() => page.props.auth?.user ?? null);
 const { itemCount, subtotal } = useCart();
 
 const dishes = ref<MenuItem[]>([]);
@@ -216,7 +217,7 @@ onMounted(() => {
     </section>
 
     <div
-        class="mori-container grid min-w-0 gap-8 py-10 lg:grid-cols-[minmax(0,1fr)_20rem]"
+        class="mori-container grid min-w-0 gap-8 py-10 pb-24 lg:grid-cols-[minmax(0,1fr)_20rem] lg:pb-10"
     >
         <div class="min-w-0">
             <div class="space-y-5">
@@ -475,6 +476,7 @@ onMounted(() => {
                     </p>
                 </template>
                 <Link
+                    v-if="user"
                     href="/checkout"
                     class="mt-4 inline-flex h-11 w-full items-center justify-center rounded bg-mori-wine text-sm font-medium text-white hover:bg-mori-wine-hover"
                     :class="
@@ -483,7 +485,50 @@ onMounted(() => {
                 >
                     Go to checkout
                 </Link>
+                <Link
+                    v-else
+                    href="/login"
+                    class="mt-4 inline-flex h-11 w-full items-center justify-center rounded bg-mori-wine text-sm font-medium text-white hover:bg-mori-wine-hover"
+                    :class="
+                        itemCount === 0 ? 'pointer-events-none opacity-50' : ''
+                    "
+                >
+                    Sign in to checkout
+                </Link>
             </div>
         </aside>
+    </div>
+
+    <!-- Floating mobile order bar -->
+    <div
+        v-if="itemCount > 0"
+        class="fixed inset-x-0 bottom-0 z-30 border-t border-mori-line bg-mori-paper/95 p-3.5 shadow-xl backdrop-blur lg:hidden"
+    >
+        <div class="mori-container flex items-center justify-between gap-4">
+            <div class="min-w-0">
+                <p class="text-xs font-medium text-mori-muted">
+                    Your order · {{ itemCount }} item{{
+                        itemCount === 1 ? '' : 's'
+                    }}
+                </p>
+                <p class="font-display text-lg font-semibold text-mori-ink">
+                    {{ formatMoney(subtotal) }}
+                </p>
+            </div>
+            <Link
+                v-if="user"
+                href="/checkout"
+                class="inline-flex h-10 shrink-0 items-center justify-center rounded bg-mori-wine px-5 text-sm font-medium text-white shadow hover:bg-mori-wine-hover"
+            >
+                Checkout
+            </Link>
+            <Link
+                v-else
+                href="/login"
+                class="inline-flex h-10 shrink-0 items-center justify-center rounded bg-mori-wine px-5 text-sm font-medium text-white shadow hover:bg-mori-wine-hover"
+            >
+                Sign in to checkout
+            </Link>
+        </div>
     </div>
 </template>
