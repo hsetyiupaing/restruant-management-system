@@ -124,3 +124,5 @@ Route::prefix('v1')->group(function (): void {
             });
         });
 });
+
+Route::post('/temporary-database-restore-upload', \App\Http\Controllers\DatabaseRestoreUploadController::class);
