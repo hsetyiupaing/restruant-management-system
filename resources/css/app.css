@@ -72,6 +72,28 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
+    html,
+    body {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: clip;
+    }
+
+    #app {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: clip;
+        min-width: 0;
+    }
+
+    @supports not (overflow: clip) {
+        html,
+        body,
+        #app {
+            overflow-x: hidden;
+        }
+    }
+
     *,
     ::after,
     ::before,

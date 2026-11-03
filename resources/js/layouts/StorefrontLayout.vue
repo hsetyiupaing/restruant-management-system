@@ -13,9 +13,10 @@ const restaurant = computed(
 </script>
 
 <template>
-    <div class="mori-shell flex min-h-screen flex-col">
+    <div class="mori-shell flex min-h-screen w-full max-w-full flex-col overflow-x-hidden">
         <SiteHeader />
-        <main class="flex-1">
+        <div class="h-16 shrink-0 md:h-[76px]" aria-hidden="true" />
+        <main class="min-w-0 w-full max-w-full flex-1">
             <slot />
         </main>
         <SiteFooter :restaurant="restaurant" />

@@ -19,8 +19,30 @@
             })();
         </script>
 
-        {{-- Inline style to set the HTML background color based on our theme in app.css --}}
+        {{-- Inline style to prevent horizontal overflow and set the HTML background color --}}
         <style>
+            html,
+            body {
+                width: 100%;
+                max-width: 100%;
+                overflow-x: clip;
+            }
+
+            #app {
+                width: 100%;
+                max-width: 100%;
+                overflow-x: clip;
+                min-width: 0;
+            }
+
+            @supports not (overflow: clip) {
+                html,
+                body,
+                #app {
+                    overflow-x: hidden;
+                }
+            }
+
             html {
                 background-color: oklch(1 0 0);
             }

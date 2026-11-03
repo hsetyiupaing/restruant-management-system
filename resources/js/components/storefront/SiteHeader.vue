@@ -69,12 +69,12 @@ function isActive(href: string, exact: boolean): boolean {
 
 <template>
     <header
-        class="sticky top-0 z-40 border-b border-mori-line bg-mori-paper/95 backdrop-blur"
+        class="fixed inset-x-0 top-0 z-40 border-b border-mori-line bg-mori-paper/95 backdrop-blur"
     >
         <div
-            class="mori-container flex h-16 items-center justify-between gap-4 md:h-[76px]"
+            class="mori-container flex h-16 items-center justify-between gap-2 sm:gap-4 md:h-[76px]"
         >
-            <Link href="/" class="shrink-0" aria-label="MORI home">
+            <Link href="/" class="min-w-0 shrink" aria-label="MORI home">
                 <BrandLogo />
             </Link>
 

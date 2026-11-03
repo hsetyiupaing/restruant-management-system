@@ -132,27 +132,27 @@ onUnmounted(() => revealObserver?.disconnect());
                     Now serving
                 </p>
                 <h1
-                    class="home-hero-text mt-5 font-display text-5xl leading-tight font-semibold break-words text-white sm:text-6xl"
+                    class="home-hero-text mt-5 font-display text-4xl leading-tight font-semibold break-words text-white sm:text-5xl lg:text-6xl"
                 >
                     {{ restaurant?.name ?? 'MORI' }}
                 </h1>
                 <p
-                    class="home-hero-text mt-4 font-display text-2xl leading-snug text-white sm:text-3xl"
+                    class="home-hero-text mt-4 font-display text-xl leading-snug break-words text-white sm:text-2xl lg:text-3xl"
                 >
                     Fire, season and a table set for you.
                 </p>
                 <p
-                    class="home-hero-text mt-5 max-w-2xl text-base leading-relaxed text-white/85 sm:text-lg"
+                    class="home-hero-text mt-5 max-w-2xl text-base leading-relaxed break-words text-white/85 sm:text-lg"
                 >
                     We cook with the market's best each morning. Order for
                     pickup or delivery, or book a seat by the window.
                 </p>
                 <div class="mt-8 flex flex-wrap justify-center gap-3">
-                    <AppButton href="/menu" size="lg">
+                    <AppButton href="/menu" size="lg" class="w-full sm:w-auto">
                         View the menu
                         <ArrowRight class="size-4" aria-hidden="true" />
                     </AppButton>
-                    <AppButton href="/reserve" variant="outline" size="lg">
+                    <AppButton href="/reserve" variant="outline" size="lg" class="w-full sm:w-auto">
                         Reserve a table
                     </AppButton>
                 </div>
@@ -176,7 +176,7 @@ onUnmounted(() => revealObserver?.disconnect());
 
         <div
             v-if="featuredDishes.length"
-            class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+            class="mt-8 grid min-w-0 gap-5 sm:grid-cols-2 lg:grid-cols-3"
         >
             <FoodCard
                 v-for="(dish, index) in featuredDishes"

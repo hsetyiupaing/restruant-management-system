@@ -121,7 +121,7 @@ function confirmAdd(): void {
 
 <template>
     <article
-        class="group flex flex-col overflow-hidden rounded border border-mori-line bg-mori-paper transition-colors focus-within:border-mori-ink/30 hover:border-mori-ink/30"
+        class="group flex min-w-0 max-w-full flex-col overflow-hidden rounded border border-mori-line bg-mori-paper transition-colors focus-within:border-mori-ink/30 hover:border-mori-ink/30"
     >
         <div class="relative aspect-[4/3] overflow-hidden bg-mori-cream">
             <Link
