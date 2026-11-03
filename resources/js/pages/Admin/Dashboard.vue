@@ -11,6 +11,8 @@ import {
     ShoppingBag,
 } from '@lucide/vue';
 import AdminTopbar from '@/components/admin/AdminTopbar.vue';
+import OrderVolumeChart from '@/components/admin/OrderVolumeChart.vue';
+import ReservationOutcomeChart from '@/components/admin/ReservationOutcomeChart.vue';
 import ColumnChart from '@/components/mori/ColumnChart.vue';
 import DataTable from '@/components/mori/DataTable.vue';
 import DonutChart from '@/components/mori/DonutChart.vue';
@@ -97,14 +99,6 @@ const revenuePoints = computed(
         })) ?? [],
 );
 
-const orderPoints = computed(
-    () =>
-        kpis.value?.order_series.map((point) => ({
-            date: point.date,
-            value: point.count,
-        })) ?? [],
-);
-
 const channelTotal = computed(
     () => (kpis.value?.pickup_orders ?? 0) + (kpis.value?.delivery_orders ?? 0),
 );
@@ -121,37 +115,6 @@ const channels = computed(() => [
         color: 'var(--mori-brass)',
     },
 ]);
-
-const reservationShown = computed(() => {
-    const data = kpis.value;
-
-    if (!data) {
-        return [];
-    }
-
-    return [
-        {
-            label: 'Completed',
-            value: data.completed_reservations,
-            color: 'var(--mori-wine)',
-        },
-        {
-            label: 'No-show',
-            value: data.no_show_reservations,
-            color: 'var(--mori-brass)',
-        },
-        {
-            label: 'Other',
-            value: Math.max(
-                0,
-                data.reservation_count -
-                    data.completed_reservations -
-                    data.no_show_reservations,
-            ),
-            color: 'var(--mori-line)',
-        },
-    ].filter((slice) => slice.value > 0);
-});
 
 const recentRows = computed(
     () =>
@@ -285,35 +248,13 @@ onMounted(() => void load());
                 </ReportCard>
             </div>
 
-            <div class="mt-4 grid gap-4 lg:grid-cols-3">
-                <ReportCard
-                    title="Order volume"
-                    caption="Orders placed per day."
-                >
-                    <ColumnChart
-                        v-if="orderPoints.length"
-                        :points="orderPoints"
-                        :format="(value) => String(Math.round(value))"
-                        :label="`Daily order count for ${orderPoints.length} days`"
-                    />
-                    <p v-else class="py-10 text-center text-sm text-mori-muted">
-                        No orders in this period.
-                    </p>
-                </ReportCard>
-
-                <ReportCard
-                    title="Reservations"
-                    caption="Outcome mix for the period."
-                >
-                    <DonutChart
-                        v-if="reservationShown.length"
-                        :slices="reservationShown"
-                        label="Reservation outcomes"
-                    />
-                    <p v-else class="py-10 text-center text-sm text-mori-muted">
-                        No reservations in this period.
-                    </p>
-                </ReportCard>
+            <div class="mt-4 grid min-w-0 gap-4 lg:grid-cols-2">
+                <OrderVolumeChart :points="kpis.order_series" />
+                <ReservationOutcomeChart
+                    :total="kpis.reservation_count"
+                    :completed="kpis.completed_reservations"
+                    :no-show="kpis.no_show_reservations"
+                />
             </div>
 
             <!-- Detail -->

@@ -14,8 +14,15 @@ const props = withDefaults(
         label: string;
         size?: number;
         thickness?: number;
+        legendPlacement?: 'side' | 'below';
+        truncateLabels?: boolean;
     }>(),
-    { size: 140, thickness: 18 },
+    {
+        size: 140,
+        thickness: 18,
+        legendPlacement: 'side',
+        truncateLabels: true,
+    },
 );
 
 const total = computed(() =>
@@ -53,7 +60,14 @@ function share(value: number): number {
 </script>
 
 <template>
-    <div class="flex flex-wrap items-center gap-5">
+    <div
+        class="flex gap-5"
+        :class="
+            legendPlacement === 'below'
+                ? 'flex-col items-center'
+                : 'flex-col items-center sm:flex-row'
+        "
+    >
         <div
             class="relative shrink-0"
             :style="{ width: `${size}px`, height: `${size}px` }"
@@ -91,7 +105,10 @@ function share(value: number): number {
             </svg>
         </div>
 
-        <dl class="min-w-0 flex-1 space-y-2 text-sm">
+        <dl
+            class="min-w-0 space-y-2 text-sm"
+            :class="legendPlacement === 'below' ? 'w-full' : 'flex-1'"
+        >
             <div
                 v-for="slice in slices"
                 :key="slice.label"
@@ -103,7 +120,15 @@ function share(value: number): number {
                         :style="{ backgroundColor: slice.color }"
                         aria-hidden="true"
                     />
-                    <span class="truncate">{{ slice.label }}</span>
+                    <span
+                        :class="
+                            truncateLabels
+                                ? 'truncate'
+                                : 'break-words whitespace-normal'
+                        "
+                    >
+                        {{ slice.label }}
+                    </span>
                 </dt>
                 <dd class="font-medium whitespace-nowrap text-mori-ink">
                     {{ slice.value }} ({{ share(slice.value) }}%)
