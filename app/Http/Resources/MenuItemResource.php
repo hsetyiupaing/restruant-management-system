@@ -56,9 +56,14 @@ class MenuItemResource extends JsonResource
         $menuImageDirectory = "restaurants/{$this->restaurant_id}/menu/";
 
         if (str_starts_with($this->image_url, $menuImageDirectory)) {
-            $disk = app()->environment('production') ? 'cloud_public' : 'public';
+            $diskName = app()->isProduction() ? (string) config('filesystems.default') : 'public';
+            $disk = Storage::disk($diskName);
 
-            return Storage::disk($disk)->url($this->image_url);
+            if (app()->isProduction()) {
+                return $disk->temporaryUrl($this->image_url, now()->addMinutes(30));
+            }
+
+            return $disk->url($this->image_url);
         }
 
         return $this->image_url;

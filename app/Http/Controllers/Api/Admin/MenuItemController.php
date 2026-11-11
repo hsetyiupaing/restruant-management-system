@@ -55,12 +55,12 @@ class MenuItemController extends Controller
         /** @var UploadedFile $image */
         $image = $request->validated('image');
         $disk = $this->menuImageDisk();
-        $path = $image->storePublicly("restaurants/{$restaurant->id}/menu", $disk);
+        $path = $image->store("restaurants/{$restaurant->id}/menu", $disk);
 
         abort_if($path === false, 500, 'The dish image could not be saved.');
 
         return response()->json([
-            'image_url' => Storage::disk($disk)->url($path),
+            'image_url' => $this->menuImageUrl($path),
         ], 201);
     }
 
@@ -214,7 +214,18 @@ class MenuItemController extends Controller
 
     private function menuImageDisk(): string
     {
-        return app()->environment('production') ? 'cloud_public' : 'public';
+        return app()->isProduction() ? (string) config('filesystems.default') : 'public';
+    }
+
+    private function menuImageUrl(string $imagePath): string
+    {
+        $disk = Storage::disk($this->menuImageDisk());
+
+        if (app()->isProduction()) {
+            return $disk->temporaryUrl($imagePath, now()->addMinutes(30));
+        }
+
+        return $disk->url($imagePath);
     }
 
     private function menuImagePath(?string $imageUrl, Restaurant $restaurant): ?string
@@ -224,10 +235,24 @@ class MenuItemController extends Controller
         }
 
         $directory = "restaurants/{$restaurant->id}/menu";
-        $directoryUrl = rtrim(Storage::disk($this->menuImageDisk())->url($directory), '/').'/';
+        $disk = Storage::disk($this->menuImageDisk());
+        $directoryUrl = rtrim($disk->url($directory), '/').'/';
 
         if (str_starts_with($imageUrl, $directoryUrl)) {
             return $directory.'/'.substr($imageUrl, strlen($directoryUrl));
+        }
+
+        if (app()->isProduction()) {
+            $signedUrl = $disk->temporaryUrl($directory.'/placeholder', now()->addMinutes(5));
+            $imageHost = parse_url($imageUrl, PHP_URL_HOST);
+            $signedHost = parse_url($signedUrl, PHP_URL_HOST);
+            $imagePath = parse_url($imageUrl, PHP_URL_PATH);
+            $directoryPath = '/'.$directory.'/';
+            $directoryPosition = is_string($imagePath) ? strpos($imagePath, $directoryPath) : false;
+
+            if ($imageHost === $signedHost && $directoryPosition !== false) {
+                return $directory.'/'.rawurldecode(substr($imagePath, $directoryPosition + strlen($directoryPath)));
+            }
         }
 
         return $imageUrl;
