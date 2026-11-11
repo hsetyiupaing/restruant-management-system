@@ -18,6 +18,7 @@ use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 
 class MenuItemController extends Controller
 {
@@ -53,12 +54,13 @@ class MenuItemController extends Controller
 
         /** @var UploadedFile $image */
         $image = $request->validated('image');
-        $path = $image->storePublicly("restaurants/{$restaurant->id}/menu", 'public');
+        $disk = $this->menuImageDisk();
+        $path = $image->storePublicly("restaurants/{$restaurant->id}/menu", $disk);
 
         abort_if($path === false, 500, 'The dish image could not be saved.');
 
         return response()->json([
-            'image_url' => asset("storage/{$path}"),
+            'image_url' => Storage::disk($disk)->url($path),
         ], 201);
     }
 
@@ -69,7 +71,9 @@ class MenuItemController extends Controller
         $item = DB::transaction(function () use ($request, $restaurant): MenuItem {
             $this->lockSignatureCollection($restaurant);
 
-            $item = $restaurant->menuItems()->create($request->safe()->except('dietary_tags'));
+            $attributes = $request->safe()->except('dietary_tags');
+            $attributes['image_url'] = $this->menuImagePath($attributes['image_url'] ?? null, $restaurant);
+            $item = $restaurant->menuItems()->create($attributes);
 
             if ($item->is_featured) {
                 $this->enforceSignatureLimit($restaurant, $item);
@@ -98,6 +102,8 @@ class MenuItemController extends Controller
 
         abort_unless($menuItem->restaurant_id === $restaurant->id, 404);
 
+        $previousImagePath = $menuItem->image_url;
+
         $menuItem = DB::transaction(function () use ($request, $restaurant, $menuItem): MenuItem {
             $this->lockSignatureCollection($restaurant);
 
@@ -106,7 +112,13 @@ class MenuItemController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $menuItem->update($request->safe()->except('dietary_tags'));
+            $attributes = $request->safe()->except('dietary_tags');
+
+            if (array_key_exists('image_url', $attributes)) {
+                $attributes['image_url'] = $this->menuImagePath($attributes['image_url'], $restaurant);
+            }
+
+            $menuItem->update($attributes);
 
             if ($menuItem->is_featured) {
                 $this->enforceSignatureLimit($restaurant, $menuItem);
@@ -118,6 +130,10 @@ class MenuItemController extends Controller
 
             return $menuItem;
         });
+
+        if ($previousImagePath !== $menuItem->image_url) {
+            $this->deleteMenuImage($previousImagePath, $restaurant);
+        }
 
         return new MenuItemResource($menuItem->load(['category', 'dietaryTags']));
     }
@@ -189,8 +205,40 @@ class MenuItemController extends Controller
 
         abort_unless($menuItem->restaurant_id === $restaurant->id, 404);
 
+        $imagePath = $menuItem->image_url;
         $menuItem->delete();
+        $this->deleteMenuImage($imagePath, $restaurant);
 
         return response()->noContent();
+    }
+
+    private function menuImageDisk(): string
+    {
+        return app()->environment('production') ? 'cloud_public' : 'public';
+    }
+
+    private function menuImagePath(?string $imageUrl, Restaurant $restaurant): ?string
+    {
+        if ($imageUrl === null) {
+            return null;
+        }
+
+        $directory = "restaurants/{$restaurant->id}/menu";
+        $directoryUrl = rtrim(Storage::disk($this->menuImageDisk())->url($directory), '/').'/';
+
+        if (str_starts_with($imageUrl, $directoryUrl)) {
+            return $directory.'/'.substr($imageUrl, strlen($directoryUrl));
+        }
+
+        return $imageUrl;
+    }
+
+    private function deleteMenuImage(?string $imagePath, Restaurant $restaurant): void
+    {
+        $directory = "restaurants/{$restaurant->id}/menu/";
+
+        if ($imagePath !== null && str_starts_with($imagePath, $directory)) {
+            Storage::disk($this->menuImageDisk())->delete($imagePath);
+        }
     }
 }

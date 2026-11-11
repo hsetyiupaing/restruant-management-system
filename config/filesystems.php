@@ -60,6 +60,19 @@ return [
             'report' => false,
         ],
 
+        'cloud_public' => [
+            'driver' => 's3',
+            'key' => env('CLOUD_STORAGE_ACCESS_KEY_ID'),
+            'secret' => env('CLOUD_STORAGE_SECRET_ACCESS_KEY'),
+            'region' => env('CLOUD_STORAGE_DEFAULT_REGION', 'auto'),
+            'bucket' => env('CLOUD_STORAGE_BUCKET'),
+            'url' => env('CLOUD_STORAGE_URL'),
+            'endpoint' => env('CLOUD_STORAGE_ENDPOINT'),
+            'use_path_style_endpoint' => env('CLOUD_STORAGE_USE_PATH_STYLE_ENDPOINT', false),
+            'visibility' => 'public',
+            'throw' => true,
+        ],
+
     ],
 
     /*

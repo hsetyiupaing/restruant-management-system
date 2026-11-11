@@ -49,8 +49,8 @@ test('staff members cannot manage the menu or members', function () {
         ->assertForbidden();
 });
 
-test('restaurant admins can upload menu images to public storage', function () {
-    Storage::fake('public');
+test('restaurant admins can upload menu images to local storage and persist their relative paths', function () {
+    Storage::fake('public', ['url' => 'https://local.test/storage']);
 
     $restaurant = Restaurant::factory()->create();
     $admin = User::factory()->create();
@@ -65,10 +65,133 @@ test('restaurant admins can upload menu images to public storage', function () {
         ], ['Accept' => 'application/json'])
         ->assertCreated();
 
-    expect($response->json('image_url'))
-        ->toContain("/storage/restaurants/{$restaurant->id}/menu/")
-        ->and(Storage::disk('public')->allFiles("restaurants/{$restaurant->id}/menu"))
-        ->toHaveCount(1);
+    $directory = "restaurants/{$restaurant->id}/menu";
+    $paths = Storage::disk('public')->allFiles($directory);
+
+    expect($paths)->toHaveCount(1)
+        ->and($response->json('image_url'))->toBe(Storage::disk('public')->url($paths[0]));
+
+    $category = Category::factory()->for($restaurant)->create();
+    $this->actingAs($admin)
+        ->postJson("/api/v1/admin/restaurants/{$restaurant->id}/menu-items", [
+            'category_id' => $category->id,
+            'name' => 'Uploaded Dish',
+            'price' => 9.5,
+            'image_url' => $response->json('image_url'),
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.image_url', Storage::disk('public')->url($paths[0]));
+
+    $this->assertDatabaseHas('menu_items', [
+        'restaurant_id' => $restaurant->id,
+        'image_url' => $paths[0],
+    ]);
+});
+
+test('restaurant admins use cloud storage for menu images in production', function () {
+    Storage::fake('public', ['url' => 'https://local.test/storage']);
+    Storage::fake('cloud_public', ['url' => 'https://cloud.test']);
+    app()->detectEnvironment(fn (): string => 'production');
+
+    $restaurant = Restaurant::factory()->create();
+    $admin = User::factory()->create();
+    RestaurantMember::factory()->for($restaurant)->for($admin)->admin()->create();
+
+    $response = $this->actingAs($admin)
+        ->post("/api/v1/admin/restaurants/{$restaurant->id}/menu-items/image", [
+            'image' => UploadedFile::fake()->createWithContent(
+                'dish.png',
+                base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/yRoAAAAASUVORK5CYII=') ?: '',
+            ),
+        ], ['Accept' => 'application/json'])
+        ->assertCreated();
+
+    $paths = Storage::disk('cloud_public')->allFiles("restaurants/{$restaurant->id}/menu");
+    expect($paths)->toHaveCount(1)
+        ->and(Storage::disk('public')->allFiles())->toBeEmpty()
+        ->and($response->json('image_url'))->toBe(Storage::disk('cloud_public')->url($paths[0]));
+
+    $category = Category::factory()->for($restaurant)->create();
+    $this->actingAs($admin)
+        ->postJson("/api/v1/admin/restaurants/{$restaurant->id}/menu-items", [
+            'category_id' => $category->id,
+            'name' => 'Cloud Dish',
+            'price' => 11,
+            'image_url' => $response->json('image_url'),
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.image_url', Storage::disk('cloud_public')->url($paths[0]));
+
+    $this->assertDatabaseHas('menu_items', [
+        'restaurant_id' => $restaurant->id,
+        'image_url' => $paths[0],
+    ]);
+});
+
+test('replacing and deleting a menu image uses the selected storage disk', function () {
+    Storage::fake('public', ['url' => 'https://local.test/storage']);
+
+    $restaurant = Restaurant::factory()->create();
+    $category = Category::factory()->for($restaurant)->create();
+    $admin = User::factory()->create();
+    RestaurantMember::factory()->for($restaurant)->for($admin)->admin()->create();
+    $directory = "restaurants/{$restaurant->id}/menu";
+    $oldPath = "{$directory}/old.png";
+    $newPath = "{$directory}/new.png";
+    Storage::disk('public')->put($oldPath, 'old image');
+    Storage::disk('public')->put($newPath, 'new image');
+    $menuItem = MenuItem::factory()->for($restaurant)->for($category)->create(['image_url' => $oldPath]);
+
+    $this->actingAs($admin)
+        ->patchJson("/api/v1/admin/restaurants/{$restaurant->id}/menu-items/{$menuItem->id}", [
+            'image_url' => Storage::disk('public')->url($newPath),
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.image_url', Storage::disk('public')->url($newPath));
+
+    expect(Storage::disk('public')->exists($oldPath))->toBeFalse()
+        ->and(Storage::disk('public')->exists($newPath))->toBeTrue();
+    $this->assertDatabaseHas('menu_items', ['id' => $menuItem->id, 'image_url' => $newPath]);
+
+    $this->actingAs($admin)
+        ->deleteJson("/api/v1/admin/restaurants/{$restaurant->id}/menu-items/{$menuItem->id}")
+        ->assertNoContent();
+
+    expect(Storage::disk('public')->exists($newPath))->toBeFalse();
+});
+
+test('production menu image replacement and deletion use cloud storage', function () {
+    Storage::fake('public', ['url' => 'https://local.test/storage']);
+    Storage::fake('cloud_public', ['url' => 'https://cloud.test']);
+    app()->detectEnvironment(fn (): string => 'production');
+
+    $restaurant = Restaurant::factory()->create();
+    $category = Category::factory()->for($restaurant)->create();
+    $admin = User::factory()->create();
+    RestaurantMember::factory()->for($restaurant)->for($admin)->admin()->create();
+    $directory = "restaurants/{$restaurant->id}/menu";
+    $oldPath = "{$directory}/old.png";
+    $newPath = "{$directory}/new.png";
+    Storage::disk('cloud_public')->put($oldPath, 'old cloud image');
+    Storage::disk('cloud_public')->put($newPath, 'new cloud image');
+    Storage::disk('public')->put($oldPath, 'local image');
+    $menuItem = MenuItem::factory()->for($restaurant)->for($category)->create(['image_url' => $oldPath]);
+
+    $this->actingAs($admin)
+        ->patchJson("/api/v1/admin/restaurants/{$restaurant->id}/menu-items/{$menuItem->id}", [
+            'image_url' => Storage::disk('cloud_public')->url($newPath),
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.image_url', Storage::disk('cloud_public')->url($newPath));
+
+    expect(Storage::disk('cloud_public')->exists($oldPath))->toBeFalse()
+        ->and(Storage::disk('public')->exists($oldPath))->toBeTrue();
+
+    $this->actingAs($admin)
+        ->deleteJson("/api/v1/admin/restaurants/{$restaurant->id}/menu-items/{$menuItem->id}")
+        ->assertNoContent();
+
+    expect(Storage::disk('cloud_public')->exists($newPath))->toBeFalse();
 });
 
 test('menu image uploads reject files that are not supported images', function () {
