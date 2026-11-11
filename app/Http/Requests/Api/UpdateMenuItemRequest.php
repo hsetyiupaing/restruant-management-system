@@ -33,6 +33,7 @@ class UpdateMenuItemRequest extends FormRequest
             'allergens.*' => ['string', Rule::enum(Allergen::class)],
             'price' => ['sometimes', 'required', 'numeric', 'min:0', 'max:999999.99'],
             'image_url' => ['sometimes', 'nullable', 'url', 'max:2048'],
+            'image_path' => ['sometimes', 'nullable', 'string', 'max:255'],
             'is_available' => ['sometimes', 'boolean'],
             'is_featured' => ['sometimes', 'boolean'],
             'customization_groups' => ['sometimes', 'array', 'max:20'],

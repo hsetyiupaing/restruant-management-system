@@ -60,7 +60,7 @@ class MenuItemController extends Controller
         abort_if($path === false, 500, 'The dish image could not be saved.');
 
         return response()->json([
-            'image_url' => $this->menuImageUrl($path),
+            'image_path' => $path,
         ], 201);
     }
 
@@ -71,8 +71,15 @@ class MenuItemController extends Controller
         $item = DB::transaction(function () use ($request, $restaurant): MenuItem {
             $this->lockSignatureCollection($restaurant);
 
-            $attributes = $request->safe()->except('dietary_tags');
-            $attributes['image_url'] = $this->menuImagePath($attributes['image_url'] ?? null, $restaurant);
+            $attributes = $request->safe()->except(['dietary_tags', 'image_path']);
+            $imagePath = $request->validated('image_path');
+
+            if ($imagePath !== null) {
+                $attributes['image_url'] = $this->uploadedMenuImagePath($imagePath, $restaurant);
+            } elseif (array_key_exists('image_url', $attributes)) {
+                $attributes['image_url'] = $this->menuImagePath($attributes['image_url'], $restaurant);
+            }
+
             $item = $restaurant->menuItems()->create($attributes);
 
             if ($item->is_featured) {
@@ -113,9 +120,19 @@ class MenuItemController extends Controller
                 ->firstOrFail();
 
             $attributes = $request->safe()->except('dietary_tags');
+            $imagePath = $request->validated('image_path');
+            unset($attributes['image_path']);
 
-            if (array_key_exists('image_url', $attributes)) {
-                $attributes['image_url'] = $this->menuImagePath($attributes['image_url'], $restaurant);
+            if ($imagePath !== null) {
+                $attributes['image_url'] = $this->uploadedMenuImagePath($imagePath, $restaurant);
+            } elseif (array_key_exists('image_url', $attributes)) {
+                $normalizedImage = $this->menuImagePath($attributes['image_url'], $restaurant);
+
+                if ($normalizedImage === $menuItem->image_url) {
+                    unset($attributes['image_url']);
+                } else {
+                    $attributes['image_url'] = $normalizedImage;
+                }
             }
 
             $menuItem->update($attributes);
@@ -217,15 +234,20 @@ class MenuItemController extends Controller
         return app()->isProduction() ? (string) config('filesystems.default') : 'public';
     }
 
-    private function menuImageUrl(string $imagePath): string
+    private function uploadedMenuImagePath(string $imagePath, Restaurant $restaurant): string
     {
+        $directory = "restaurants/{$restaurant->id}/menu/";
         $disk = Storage::disk($this->menuImageDisk());
 
-        if (app()->isProduction()) {
-            return $disk->temporaryUrl($imagePath, now()->addMinutes(30));
-        }
+        abort_unless(
+            str_starts_with($imagePath, $directory)
+                && dirname($imagePath) === rtrim($directory, '/')
+                && ! str_contains($imagePath, '?')
+                && $disk->exists($imagePath),
+            422,
+        );
 
-        return $disk->url($imagePath);
+        return $imagePath;
     }
 
     private function menuImagePath(?string $imageUrl, Restaurant $restaurant): ?string
@@ -239,19 +261,10 @@ class MenuItemController extends Controller
         $directoryUrl = rtrim($disk->url($directory), '/').'/';
 
         if (str_starts_with($imageUrl, $directoryUrl)) {
-            return $directory.'/'.substr($imageUrl, strlen($directoryUrl));
-        }
+            $relativePath = parse_url(substr($imageUrl, strlen($directoryUrl)), PHP_URL_PATH);
 
-        if (app()->isProduction()) {
-            $signedUrl = $disk->temporaryUrl($directory.'/placeholder', now()->addMinutes(5));
-            $imageHost = parse_url($imageUrl, PHP_URL_HOST);
-            $signedHost = parse_url($signedUrl, PHP_URL_HOST);
-            $imagePath = parse_url($imageUrl, PHP_URL_PATH);
-            $directoryPath = '/'.$directory.'/';
-            $directoryPosition = is_string($imagePath) ? strpos($imagePath, $directoryPath) : false;
-
-            if ($imageHost === $signedHost && $directoryPosition !== false) {
-                return $directory.'/'.rawurldecode(substr($imagePath, $directoryPosition + strlen($directoryPath)));
+            if (is_string($relativePath) && $relativePath !== '') {
+                return $directory.'/'.rawurldecode($relativePath);
             }
         }
 

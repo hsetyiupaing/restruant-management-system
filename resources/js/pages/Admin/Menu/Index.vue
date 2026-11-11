@@ -131,6 +131,8 @@ const itemSaving = ref(false);
 const fieldErrors = ref<Record<string, string[]>>({});
 const pastedDishImage = ref<File | null>(null);
 const pastedDishImagePreview = ref<string | null>(null);
+const pendingImagePath = ref<string | null>(null);
+const originalImageUrl = ref<string | null>(null);
 
 const itemForm = reactive({
     id: null as number | null,
@@ -249,9 +251,19 @@ watch(itemOpen, (isOpen) => {
     }
 });
 
+watch(
+    () => itemForm.image_url,
+    (imageUrl) => {
+        if (imageUrl.trim() !== (originalImageUrl.value ?? '').trim()) {
+            pendingImagePath.value = null;
+        }
+    },
+);
+
 function openItem(item?: MenuItem): void {
     fieldErrors.value = {};
     clearPastedDishImage();
+    pendingImagePath.value = null;
     itemForm.id = item?.id ?? null;
     itemForm.category_id = item
         ? String(item.category_id)
@@ -264,6 +276,7 @@ function openItem(item?: MenuItem): void {
         item?.allergens?.map((allergen) => allergen.value) ?? [];
     itemForm.price = item?.price ?? '';
     itemForm.image_url = item?.image_url ?? '';
+    originalImageUrl.value = item?.image_url ?? null;
     itemForm.is_available = item?.is_available ?? true;
     itemForm.is_featured = item?.is_featured ?? false;
     itemForm.dietary_tags = item?.dietary_tags?.map((tag) => tag.slug) ?? [];
@@ -298,16 +311,16 @@ async function saveItem(): Promise<void> {
             const formData = new FormData();
             formData.append('image', pastedDishImage.value);
 
-            const uploadedImage = await api.postFormData<{ image_url: string }>(
+            const uploadedImage = await api.postFormData<{ image_path: string }>(
                 `${base.value}/menu-items/image`,
                 formData,
             );
 
-            itemForm.image_url = uploadedImage.image_url;
-            clearPastedDishImage();
+            pendingImagePath.value = uploadedImage.image_path;
+            pastedDishImage.value = null;
         }
 
-        const body = {
+        const body: Record<string, unknown> = {
             category_id: Number(itemForm.category_id),
             name: itemForm.name.trim(),
             course: itemForm.course,
@@ -315,12 +328,21 @@ async function saveItem(): Promise<void> {
             ingredients: itemForm.ingredients.trim() || null,
             allergens: itemForm.allergens,
             price: Number.parseFloat(itemForm.price || '0'),
-            image_url: itemForm.image_url.trim() || null,
             is_available: itemForm.is_available,
             is_featured: itemForm.is_featured,
             dietary_tags: itemForm.dietary_tags,
             customization_groups: itemForm.customization_groups,
         };
+
+        const imageUrl = itemForm.image_url.trim() || null;
+
+        if (itemForm.id === null || imageUrl !== originalImageUrl.value) {
+            body.image_url = imageUrl;
+        }
+
+        if (pendingImagePath.value !== null) {
+            body.image_path = pendingImagePath.value;
+        }
 
         if (itemForm.id === null) {
             await api.post(`${base.value}/menu-items`, body);
